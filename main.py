@@ -62,35 +62,29 @@ async def oi(ctx):
     await ctx.send(f"Fala {ctx.author.mention}! Eu tô vivo aqui no servidor!")
 # ──▲------------------------------------------------------------------------
 
-# ──▼ Comando !ajuda --------------------------------------------------------
-@bot.command()
-async def ajuda(ctx):
+# ──▼ Comando !sos ----------------------------------------------------------
+@bot.command(name="sos")
+async def sos(ctx):
     ajuda_texto = (
         "📘 **Comandos disponíveis:**\n\n"
-        "🔹 `!virus NomeDoVirus`\n"
-        " Mostra todos os dados cadastrados daquele vírus (HP, Atk, Dmg, etc.).\n\n"
-        "🔹 `!viruslist`\n"
-        " Exibe a lista de todos os vírus disponíveis na planilha, em ordem alfabética.\n\n"
-        "🔹 `!chipslist`\n"
-        " Exibe a lista de todos os chips disponíveis na planilha, em ordem alfabética.\n\n"
-        "🔹 `!chip NomeDoChip`\n"
-        " Mostra os dados de um chip específico.\n\n"
-        "🔹 `!pecaslist`\n"
-        " Exibe a lista de todas as peças disponíveis na planilha.\n\n"
-        "🔹 `!batalha Aliado1 10/10, Aliado2 15/15 vs Inimigo1 12/12, Inimigo2 20/20`\n"
-        " Inicia uma nova batalha com os personagens e seus PVs.\n\n"
-        "🔹 `!rodada Nome faz algo com Alvo 3`\n"
-        " Ou `Nome faz algo (3) no Alvo`\n"
-        " Registra uma ação com dano, seguindo a ordem dos turnos.\n\n"
-        "🔹 `!passar NomeDoPersonagem`\n"
-        " O personagem atual decide passar sua vez.\n\n"
-        "🔹 `!status`\n"
-        " Exibe o status atual da batalha em andamento.\n\n"
-        "🔹 `!encerrar`\n"
-        " Encerra a batalha atual manualmente.\n\n"
-        "🔹 `!oi`\n"
-        " Só confirma que o bot está vivo no servidor 😄\n\n"
-        "🛠️ Novos comandos serão adicionados conforme o sistema evolui!"
+        "🦠 **Vírus:**\n"
+        "  • `!virus NomeDoVirus` – Mostra os dados de um vírus (HP, Atk, Dmg, etc.).\n"
+        "  • `!viruslist` – Lista todos os vírus disponíveis na planilha.\n\n"
+        "💾 **Chips:**\n"
+        "  • `!chip NomeDoChip` – Mostra os dados de um chip específico.\n"
+        "  • `!chipslist` – Lista todos os chips disponíveis.\n\n"
+        "🧩 **Peças:**\n"
+        "  • `!peça NomeDaPeça` – Mostra os dados de uma peça específica.\n"
+        "  • `!pecaslist` – Lista todas as peças disponíveis.\n\n"
+        "⚔️ **Batalha:**\n"
+        "  • `!batalha Aliado1 10/10, Aliado2 15/15 vs Inimigo1 12/12, Inimigo2 20/20` – Inicia uma nova batalha.\n"
+        "  • `!rodada Nome faz algo com Alvo 3` – Registra uma ação com dano.\n"
+        "  • `!passar NomeDoPersonagem` – Passa a vez do personagem atual.\n"
+        "  • `!status` – Mostra o status da batalha em andamento.\n"
+        "  • `!encerrar` – Encerra a batalha atual manualmente.\n\n"
+        "🤖 **Outros:**\n"
+        "  • `!oi` – Apenas confirma que o bot está vivo 😄\n\n"
+        "🛠️ **Novos comandos serão adicionados conforme o sistema evolui!**"
     )
     await ctx.send(ajuda_texto)
 # ──▲------------------------------------------------------------------------
