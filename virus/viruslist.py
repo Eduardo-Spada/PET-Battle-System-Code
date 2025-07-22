@@ -2,10 +2,13 @@ from discord.ext import commands
 import aiohttp
 import csv
 
-# ──▼  coloque abaixo do import csv (ou onde achar melhor) ───────────
-def adicionar_comando_viruslist(bot):
-    @bot.command(name="viruslist")
-    async def viruslist(ctx):
+
+class VirusList(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(name="viruslist")
+    async def viruslist(self, ctx):
         """Lista todos os vírus cadastrados na planilha."""
         try:
             url = (
@@ -47,8 +50,9 @@ def adicionar_comando_viruslist(bot):
             corpo = "\n".join(f"• {n}" for n in nomes)
             texto = header + corpo
 
+            # Divide em partes se ultrapassar 2000 caracteres
             if len(texto) > 2000:
-                partes = [texto[i:i+1990] for i in range(0, len(texto), 1990)]
+                partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
                     await ctx.send(f"```{parte}```")
             else:
@@ -57,7 +61,8 @@ def adicionar_comando_viruslist(bot):
         except Exception as e:
             print(f"❌ Erro no comando !viruslist: {e}")
             await ctx.send("⚠️ Ocorreu um erro ao tentar listar os vírus.")
-# ──▲  fim do comando !viruslist ─────────────────────────────────────
 
-def setup(bot):
-    adicionar_comando_viruslist(bot)
+
+# Setup assíncrono para o discord.py 2.x
+async def setup(bot):
+    await bot.add_cog(VirusList(bot))
