@@ -1,8 +1,9 @@
 from discord.ext import commands
 import aiohttp
 import csv
+import discord
 
-# 🔹 Dicionário para imagens (vamos criar depois)
+# 🔹 Dicionário para imagens
 from Chip.chips_imagens import chips_imagens
 
 
@@ -33,7 +34,6 @@ class ChipCommand(commands.Cog):
                     csv_text = await resp.text()
 
             linhas = csv_text.splitlines()
-
             if "Nome" not in linhas[0]:
                 linhas = linhas[1:]
 
@@ -69,21 +69,25 @@ class ChipCommand(commands.Cog):
             def safe(chave):
                 return chip_encontrado.get(chave, "Desconhecido")
 
-            resposta = (
-                f"💾 **Chip: {safe('Nome')}**\n"
-                f"**Elemento:** {safe('Elemento')}\n"
-                f"**Dano:** {safe('Dano')}\n"
-                f"**Efeito:** {safe('Efeito')}\n"
-                f"**Rarity:** {safe('Rarity')}"
+            nome_chip = safe("Nome")
+            imagem_url = chips_imagens.get(nome_chip.lower().strip())
+
+            # 🔹 Criando Embed
+            embed = discord.Embed(
+                title=f"💾 Chip: {nome_chip}",
+                description=(
+                    f"**Elemento:** {safe('Elemento')}\n"
+                    f"**Dano:** {safe('Dano')}\n"
+                    f"**Efeito:** {safe('Efeito')}\n"
+                    f"**Rarity:** {safe('Rarity')}"
+                ),
+                color=discord.Color.blue()
             )
 
-            await ctx.send(resposta)
-
-            # 🔹 Mostra imagem (se existir)
-            nome_padrao = safe("Nome").lower().strip()
-            imagem_url = chips_imagens.get(nome_padrao)
             if imagem_url:
-                await ctx.send(imagem_url)
+                embed.set_image(url=imagem_url)
+
+            await ctx.send(embed=embed)
 
         except Exception as e:
             print(f"❌ Erro no comando !chip: {e}")
