@@ -84,12 +84,11 @@ class ChipCommand(commands.Cog):
                 f"**Rarity:** {safe('Rarity')}"
             )
 
-            # Envia mensagem + imagem (se houver)
+            # Se houver imagem, adiciona o link na mesma mensagem
             if imagem_url:
-                await ctx.send(msg)
-                await ctx.send(imagem_url)
-            else:
-                await ctx.send(msg)
+                msg += f"\n{imagem_url}"
+
+            await ctx.send(msg)
 
         except Exception as e:
             print(f"❌ Erro no comando !chip: {e}")
