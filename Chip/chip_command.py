@@ -75,37 +75,30 @@ class ChipCommand(commands.Cog):
             nome_chip = safe("Nome")
             imagem_url = chips_imagens.get(nome_chip.lower().strip())
 
-            # 🔹 Montando mensagem de texto puro
-            msg = (
-                f"💾 **Chip:** {nome_chip}\n"
-                f"**Elemento:** {safe('Elemento')}\n"
-                f"**Dano:** {safe('Dano')}\n"
-                f"**Efeito:** {safe('Efeito')}\n"
-                f"**Rarity:** {safe('Rarity')}"
+            # 🔹 Montando mensagem no Embed
+            embed = discord.Embed(
+                title=f"💾 Chip: {nome_chip}",
+                description=(
+                    f"**Elemento:** {safe('Elemento')}\n"
+                    f"**Dano:** {safe('Dano')}\n"
+                    f"**Efeito:** {safe('Efeito')}\n"
+                    f"**Rarity:** {safe('Rarity')}"
+                ),
+                color=discord.Color.blue()
             )
 
-            # Envia mensagem e imagem separadas (sem mostrar o link)
+            # Se houver imagem, adiciona ao Embed
             if imagem_url:
-                await ctx.send(msg)
-                await ctx.send(file=discord.File(fp=await self.baixar_imagem(imagem_url), filename="chip.png"))
-            else:
-                await ctx.send(msg)
+                embed.set_image(url=imagem_url)
+
+            await ctx.send(embed=embed)
 
         except Exception as e:
             print(f"❌ Erro no comando !chip: {e}")
             await ctx.send("⚠️ Ocorreu um erro ao tentar buscar o chip.")
 
-    async def baixar_imagem(self, url):
-        """Baixa a imagem de uma URL e retorna um objeto BytesIO."""
-        import io
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                if resp.status != 200:
-                    return None
-                data = await resp.read()
-                return io.BytesIO(data)
-
 
 # Setup para discord.py 2.x
 async def setup(bot):
     await bot.add_cog(ChipCommand(bot))
+
