@@ -26,6 +26,7 @@ class ChipCommand(commands.Cog):
                 "pub?gid=1394317870&single=true&output=csv"
             )
 
+            # 🔹 Fazendo requisição para obter os dados da planilha
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as resp:
                     if resp.status != 200:
@@ -33,6 +34,7 @@ class ChipCommand(commands.Cog):
                         return
                     csv_text = await resp.text()
 
+            # 🔹 Processando CSV
             linhas = csv_text.splitlines()
             if "Nome" not in linhas[0]:
                 linhas = linhas[1:]
@@ -43,7 +45,7 @@ class ChipCommand(commands.Cog):
             chip_encontrado = None
             nome_proc = nome.lower().strip()
 
-            # Busca exata
+            # 🔹 Busca exata
             for row in reader:
                 col_nome = next((k for k in row if "nome" in k.lower()), None)
                 if not col_nome:
@@ -52,7 +54,7 @@ class ChipCommand(commands.Cog):
                     chip_encontrado = row
                     break
 
-            # Busca aproximada
+            # 🔹 Busca aproximada
             if not chip_encontrado:
                 for row in reader:
                     col_nome = next((k for k in row if "nome" in k.lower()), None)
@@ -62,6 +64,7 @@ class ChipCommand(commands.Cog):
                         chip_encontrado = row
                         break
 
+            # 🔹 Se não encontrou nada
             if not chip_encontrado:
                 await ctx.send(f"❌ Nenhum chip com nome parecido a **{nome}** foi encontrado.")
                 return
@@ -72,22 +75,21 @@ class ChipCommand(commands.Cog):
             nome_chip = safe("Nome")
             imagem_url = chips_imagens.get(nome_chip.lower().strip())
 
-            # 🔹 Criando Embed
-            embed = discord.Embed(
-                title=f"💾 Chip: {nome_chip}",
-                description=(
-                    f"**Elemento:** {safe('Elemento')}\n"
-                    f"**Dano:** {safe('Dano')}\n"
-                    f"**Efeito:** {safe('Efeito')}\n"
-                    f"**Rarity:** {safe('Rarity')}"
-                ),
-                color=discord.Color.blue()
+            # 🔹 Montando mensagem de texto puro (sem embed)
+            msg = (
+                f"💾 **Chip:** {nome_chip}\n"
+                f"**Elemento:** {safe('Elemento')}\n"
+                f"**Dano:** {safe('Dano')}\n"
+                f"**Efeito:** {safe('Efeito')}\n"
+                f"**Rarity:** {safe('Rarity')}"
             )
 
+            # Envia mensagem + imagem (se houver)
             if imagem_url:
-                embed.set_image(url=imagem_url)
-
-            await ctx.send(embed=embed)
+                await ctx.send(msg)
+                await ctx.send(imagem_url)
+            else:
+                await ctx.send(msg)
 
         except Exception as e:
             print(f"❌ Erro no comando !chip: {e}")
