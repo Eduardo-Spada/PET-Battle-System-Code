@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord import Embed
 import aiohttp
 import csv
 
@@ -32,7 +33,7 @@ class ChipCommand(commands.Cog):
 
             linhas = csv_text.splitlines()
 
-            # Verifica se o cabeçalho existe
+            # Remove header extra se precisar
             if "Nome" not in linhas[0]:
                 linhas = linhas[1:]
 
@@ -51,8 +52,15 @@ class ChipCommand(commands.Cog):
                     chip_encontrado = row
                     break
 
-            # Busca parcial
+            # Busca parcial (se não achou na exata)
             if not chip_encontrado:
+                # CSV reader já foi esgotado, então precisa resetar
+                linhas = csv_text.splitlines()
+                if "Nome" not in linhas[0]:
+                    linhas = linhas[1:]
+                reader = csv.DictReader(linhas)
+                reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
+
                 for row in reader:
                     col_nome = next((k for k in row if "nome" in k.lower()), None)
                     if not col_nome:
@@ -68,27 +76,28 @@ class ChipCommand(commands.Cog):
             def safe(chave):
                 return chip_encontrado.get(chave, "Desconhecido")
 
-            resposta = (
-                f"💾  **Chip: {safe('Nome')}**\n"
-                f"**Elemento:** {safe('Elemento')}\n"
-                f"**Dano:** {safe('Dano')}\n"
-                f"**Efeito:** {safe('Efeito')}\n"
-                f"**Rarity:** {safe('Rarity')}"
+            # Monta Embed com os dados
+            embed = Embed(
+                title=f"💾 Chip: {safe('Nome')}",
+                color=0x00ffcc
             )
+            embed.add_field(name="Elemento", value=safe('Elemento'), inline=False)
+            embed.add_field(name="Dano", value=safe('Dano'), inline=False)
+            embed.add_field(name="Efeito", value=safe('Efeito'), inline=False)
+            embed.add_field(name="Rarity", value=safe('Rarity'), inline=False)
 
-            await ctx.send(resposta)
-
-            # 🔹 Mostra imagem (se houver)
+            # Pega imagem e adiciona no embed se existir
             nome_padrao = safe("Nome").lower().strip()
             imagem_url = chips_imagens.get(nome_padrao)
             if imagem_url:
-                await ctx.send(imagem_url)
+                embed.set_image(url=imagem_url)
+
+            await ctx.send(embed=embed)
 
         except Exception as e:
             print(f"❌ Erro no comando !chip: {e}")
             await ctx.send("⚠️ Ocorreu um erro ao tentar buscar o chip.")
 
 
-# Setup assíncrono para o discord.py 2.x
 async def setup(bot):
     await bot.add_cog(ChipCommand(bot))
