@@ -1,43 +1,49 @@
 from discord.ext import commands
 import aiohttp
 import csv
-import unicodedata
 
 class LocalCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # URL da planilha CSV pública
+        # URL da planilha
         self.url = (
             "https://docs.google.com/spreadsheets/d/e/"
             "2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/"
             "pub?gid=1726418026&single=true&output=csv"
         )
 
-    def normalize(self, texto):
-        """Remove acentos, coloca em minúsculo e tira espaços extras."""
-        return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode().lower().strip()
+    async def get_csv_rows(self):
+        """Função auxiliar para buscar e normalizar linhas do CSV"""
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.url) as resp:
+                if resp.status != 200:
+                    raise ValueError("Não foi possível acessar a planilha.")
+                csv_text = await resp.text()
+
+        linhas = csv_text.splitlines()
+        # Garante que o cabeçalho correto existe
+        if "Name" not in linhas[0] and "Area" not in linhas[0]:
+            linhas = linhas[1:]
+
+        reader = csv.DictReader(linhas)
+        # Normaliza os nomes das colunas
+        reader.fieldnames = [h.strip().replace("\ufeff", "").lower() for h in reader.fieldnames]
+
+        # Normaliza cada linha: remove espaços extras
+        rows = []
+        for row in reader:
+            clean_row = {k.strip().lower(): v.strip() for k, v in row.items()}
+            rows.append(clean_row)
+        return rows
 
     @commands.command(name="locais")
     async def locais(self, ctx):
         """Lista todas as áreas disponíveis na planilha."""
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.url) as resp:
-                    if resp.status != 200:
-                        await ctx.send("⚠️ Não foi possível acessar a planilha.")
-                        return
-                    csv_text = await resp.text()
-
-            linhas = csv_text.splitlines()
-            reader = csv.DictReader(linhas)
-            # Normaliza os nomes das colunas
-            reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
-
+            rows = await self.get_csv_rows()
             areas = set()
-            for row in reader:
-                # Normaliza keys e values
-                row = {k.strip().lower(): v for k, v in row.items()}
-                area = row.get("area", "").strip()
+            for row in rows:
+                area = row.get("area", "")
                 if area:
                     areas.add(area)
 
@@ -48,7 +54,6 @@ class LocalCommand(commands.Cog):
             areas_list = sorted(areas)
             texto = f"📍 **Áreas Disponíveis ({len(areas_list)}):**\n" + "\n".join(f"• {a}" for a in areas_list)
 
-            # Divide em blocos se muito longo
             if len(texto) > 2000:
                 partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
@@ -68,30 +73,19 @@ class LocalCommand(commands.Cog):
             return
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.url) as resp:
-                    if resp.status != 200:
-                        await ctx.send("⚠️ Não foi possível acessar a planilha.")
-                        return
-                    csv_text = await resp.text()
-
-            linhas = csv_text.splitlines()
-            reader = csv.DictReader(linhas)
-            reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
-
-            area_proc = self.normalize(area_nome)
+            rows = await self.get_csv_rows()
+            area_proc = area_nome.lower().strip()
             virus_encontrados = []
 
-            for row in reader:
-                # Normaliza keys e values
-                row = {k.strip().lower(): v for k, v in row.items()}
-                area = row.get("area", "").strip()
-                nome_virus = row.get("name", "").strip()
-
+            for row in rows:
+                area = row.get("area", "")
+                nome_virus = row.get("name", "")
                 if area and nome_virus:
-                    area_norm = self.normalize(area)
-                    # Busca exata ou parcial
-                    if area_proc == area_norm or area_proc in area_norm:
+                    # busca exata
+                    if area_proc == area.lower():
+                        virus_encontrados.append(nome_virus)
+                    # busca parcial
+                    elif area_proc in area.lower():
                         virus_encontrados.append(nome_virus)
 
             if not virus_encontrados:
@@ -101,7 +95,6 @@ class LocalCommand(commands.Cog):
             virus_encontrados = sorted(virus_encontrados)
             texto = f"🦠 **Vírus encontrados na área {area_nome} ({len(virus_encontrados)}):**\n" + "\n".join(f"• {v}" for v in virus_encontrados)
 
-            # Divide em blocos se muito longo
             if len(texto) > 2000:
                 partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
