@@ -89,6 +89,59 @@ class ChipCommand(commands.Cog):
             await ctx.send(mensagem)
 
             # ------------------------------
+            #  🔥 Envia imagem separada
+            # ------------------------------
+            nome_padrao = safe("Nome").lower().strip()
+            imagem_url = chips_imagens.get(nome_padrao)
+
+            if imagem_url:
+                await ctx.send(imagem_url)
+
+        except Exception as e:
+            print(f"❌ Erro no comando !chip: {e}")
+            await ctx.send("⚠️ Ocorreu um erro ao tentar buscar o chip.")
+
+
+async def setup(bot):
+    await bot.add_cog(ChipCommand(bot))
+
+            # Busca parcial se não achou
+            if not chip_encontrado:
+                linhas = csv_text.splitlines()
+                if "Nome" not in linhas[0]:
+                    linhas = linhas[1:]
+                reader = csv.DictReader(linhas)
+                reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
+
+                for row in reader:
+                    col_nome = next((k for k in row if "nome" in k.lower()), None)
+                    if not col_nome:
+                        continue
+                    if nome_proc in row[col_nome].strip().lower():
+                        chip_encontrado = row
+                        break
+
+            if not chip_encontrado:
+                await ctx.send(f"❌ Nenhum chip com nome parecido a **{nome}** foi encontrado.")
+                return
+
+            def safe(chave):
+                return chip_encontrado.get(chave, "Desconhecido")
+
+            # ------------------------------
+            #  🔥 Mensagem normal (sem embed)
+            # ------------------------------
+            mensagem = (
+                f"💾 **Chip: {safe('Nome')}**\n"
+                f"**Elemento:** {safe('Elemento')}\n"
+                f"**Dano:** {safe('Dano')}\n"
+                f"**Efeito:** {safe('Efeito')}\n"
+                f"**Rarity:** {safe('Rarity')}"
+            )
+
+            await ctx.send(mensagem)
+
+            # ------------------------------
             #  🔥 Imagem oculta o link (embed só da imagem)
             # ------------------------------
             nome_padrao = safe("Nome").lower().strip()
