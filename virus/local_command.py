@@ -1,16 +1,21 @@
 from discord.ext import commands
 import aiohttp
 import csv
+import unicodedata
 
 class LocalCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # URL da planilha
+        # URL da planilha CSV pública
         self.url = (
             "https://docs.google.com/spreadsheets/d/e/"
             "2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/"
             "pub?gid=1726418026&single=true&output=csv"
         )
+
+    def normalize(self, texto):
+        """Remove acentos, coloca em minúsculo e tira espaços extras."""
+        return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode().lower().strip()
 
     @commands.command(name="locais")
     async def locais(self, ctx):
@@ -25,11 +30,14 @@ class LocalCommand(commands.Cog):
 
             linhas = csv_text.splitlines()
             reader = csv.DictReader(linhas)
+            # Normaliza os nomes das colunas
             reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
 
             areas = set()
             for row in reader:
-                area = row.get("Area", "").strip()
+                # Normaliza keys e values
+                row = {k.strip().lower(): v for k, v in row.items()}
+                area = row.get("area", "").strip()
                 if area:
                     areas.add(area)
 
@@ -71,18 +79,19 @@ class LocalCommand(commands.Cog):
             reader = csv.DictReader(linhas)
             reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
 
-            area_proc = area_nome.lower().strip()
+            area_proc = self.normalize(area_nome)
             virus_encontrados = []
 
             for row in reader:
-                area = row.get("Area", "").strip()
-                nome_virus = row.get("Name", "").strip()
+                # Normaliza keys e values
+                row = {k.strip().lower(): v for k, v in row.items()}
+                area = row.get("area", "").strip()
+                nome_virus = row.get("name", "").strip()
+
                 if area and nome_virus:
-                    # busca exata
-                    if area_proc == area.lower():
-                        virus_encontrados.append(nome_virus)
-                    # busca parcial
-                    elif area_proc in area.lower():
+                    area_norm = self.normalize(area)
+                    # Busca exata ou parcial
+                    if area_proc == area_norm or area_proc in area_norm:
                         virus_encontrados.append(nome_virus)
 
             if not virus_encontrados:
