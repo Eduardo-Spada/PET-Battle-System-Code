@@ -29,6 +29,7 @@ class LocalCommand(commands.Cog):
 
             areas = set()
             for row in reader:
+                # Procura dinamicamente a coluna "Area"
                 col_area = next((k for k in row if "area" in k.lower()), None)
                 if col_area:
                     area = row[col_area].strip()
@@ -46,9 +47,9 @@ class LocalCommand(commands.Cog):
             if len(texto) > 2000:
                 partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
-                    await ctx.send(parte)
+                    await ctx.send(f"{parte}")
             else:
-                await ctx.send(texto)
+                await ctx.send(f"{texto}")
 
         except Exception as e:
             print(f"❌ Erro no comando !locais: {e}")
@@ -77,13 +78,18 @@ class LocalCommand(commands.Cog):
             virus_encontrados = []
 
             for row in reader:
+                # Procura dinamicamente colunas "Area" e "Name"
                 col_area = next((k for k in row if "area" in k.lower()), None)
                 col_nome = next((k for k in row if "name" in k.lower()), None)
                 if col_area and col_nome:
                     area = row[col_area].strip()
                     nome_virus = row[col_nome].strip()
                     if area and nome_virus:
-                        if area_proc == area.lower() or area_proc in area.lower():
+                        # busca exata
+                        if area_proc == area.lower():
+                            virus_encontrados.append(nome_virus)
+                        # busca parcial
+                        elif area_proc in area.lower():
                             virus_encontrados.append(nome_virus)
 
             if not virus_encontrados:
@@ -93,16 +99,18 @@ class LocalCommand(commands.Cog):
             virus_encontrados = sorted(virus_encontrados)
             texto = f"🦠 **Vírus encontrados na área {area_nome} ({len(virus_encontrados)}):**\n" + "\n".join(f"• {v}" for v in virus_encontrados)
 
+            # Divide em blocos se muito longo
             if len(texto) > 2000:
                 partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
-                    await ctx.send(parte)
+                    await ctx.send(f"{parte}")
             else:
-                await ctx.send(texto)
+                await ctx.send(f"{texto}")
 
         except Exception as e:
             print(f"❌ Erro no comando !local: {e}")
             await ctx.send("⚠️ Ocorreu um erro ao tentar buscar os vírus da área.")
 
+# Setup assíncrono para discord.py 2.x
 async def setup(bot):
     await bot.add_cog(LocalCommand(bot))
