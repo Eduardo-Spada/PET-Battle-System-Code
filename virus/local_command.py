@@ -47,9 +47,9 @@ class LocalCommand(commands.Cog):
             if len(texto) > 2000:
                 partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
-                    await ctx.send(f"{parte}")
+                    await ctx.send(f"```{parte}```")
             else:
-                await ctx.send(f"{texto}")
+                await ctx.send(f"```{texto}```")
 
         except Exception as e:
             print(f"❌ Erro no comando !locais: {e}")
@@ -103,9 +103,9 @@ class LocalCommand(commands.Cog):
             if len(texto) > 2000:
                 partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
-                    await ctx.send(f"{parte}")
+                    await ctx.send(f"```{parte}```")
             else:
-                await ctx.send(f"{texto}")
+                await ctx.send(f"```{texto}```")
 
         except Exception as e:
             print(f"❌ Erro no comando !local: {e}")
