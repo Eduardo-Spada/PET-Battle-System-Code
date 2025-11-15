@@ -26,6 +26,10 @@ async def setup_extensoes():
             await bot.load_extension("virus.viruslist")
             print("📜 Extensão virus.viruslist carregada com sucesso!")
 
+        if "virus.local_command" not in bot.extensions:
+            await bot.load_extension("virus.local_command")
+            print("📍 Extensão virus.local_command carregada com sucesso!")
+
         # Extensões de Chips
         if "Chip.chip_command" not in bot.extensions:
             await bot.load_extension("Chip.chip_command")
@@ -49,27 +53,24 @@ async def setup_extensoes():
             await bot.load_extension("batalha.batalha")
             print("⚔️ Extensão batalha.batalha carregada com sucesso!")
 
-        # Extensão DOC — (correção aqui!)
+        # Extensão DOC
         if "Links.doc_command" not in bot.extensions:
             await bot.load_extension("Links.doc_command")
             print("📘 Extensão Links.doc_command carregada com sucesso!")
 
     except Exception as e:
         print(f"❌ Erro ao carregar extensões: {e}")
-# ──▲───────────────────────────────────────────────────────────────────
-
+# ──▲──────────────────────────────────────────────────────────────────
 
 @bot.event
 async def on_ready():
     print(f"✅ Bot está online como {bot.user}")
 
-
 # ──▼ Comando simples ----------------------------------------------------
 @bot.command()
 async def oi(ctx):
     await ctx.send(f"Fala {ctx.author.mention}! Eu tô vivo aqui no servidor!")
-# ──▲───────────────────────────────────────────────────────────────────
-
+# ──▲──────────────────────────────────────────────────────────────────
 
 # ──▼ Comando SOS --------------------------------------------------------
 @bot.command(name="sos")
@@ -78,10 +79,12 @@ async def sos(ctx):
         "📘 **Comandos disponíveis:**\n\n"
         "🦠 **Vírus:**\n"
         "  • `!virus NomeDoVirus` – Mostra os dados de um vírus.\n"
-        "  • `!viruslist` – Lista todos os vírus.\n\n"
+        "  • `!viruslist` – Lista todos os vírus.\n"
+        "  • `!locais` – Lista todas as áreas.\n"
+        "  • `!local NomeDaArea` – Mostra vírus em uma área específica.\n\n"
         "💾 **Chips:**\n"
         "  • `!chip NomeDoChip` – Mostra os dados de um chip.\n"
-        "  • `!chipslist` – Lista os chips.\n\n"
+        "  • `!chipslist` – Lista todos os chips.\n\n"
         "🧩 **Peças:**\n"
         "  • `!peça NomeDaPeça` – Mostra os dados de uma peça.\n"
         "  • `!pecaslist` – Lista todas as peças.\n\n"
@@ -98,14 +101,12 @@ async def sos(ctx):
         "🛠️ Mais comandos virão!"
     )
     await ctx.send(ajuda_texto)
-# ──▲───────────────────────────────────────────────────────────────────
-
+# ──▲──────────────────────────────────────────────────────────────────
 
 # ──▼ Executar o bot -----------------------------------------------------
 async def main():
     async with bot:
         await setup_extensoes()
-
         try:
             await bot.start(os.environ["TOKEN"])
         except KeyError:
@@ -113,7 +114,6 @@ async def main():
         except Exception as e:
             print(f"❌ Erro ao iniciar o bot: {e}")
 
-
 if __name__ == "__main__":
     asyncio.run(main())
-# ──▲───────────────────────────────────────────────────────────────────
+# ──▲──────────────────────────────────────────────────────────────────
