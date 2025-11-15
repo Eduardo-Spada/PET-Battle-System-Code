@@ -43,7 +43,7 @@ chips_imagens = {
     "burnsquare 2": "https://example.com/burnsquare2.png",
     "burnsquare 3": "https://example.com/burnsquare3.png",
     "candle": "https://example.com/candle.png",
-    "cannon": "https://example.com/cannon.png",
+    "cannon": None,
     "charge": "https://example.com/charge.png",
     "circulargun": "https://example.com/circulargun.png",
     "copydamage": "https://example.com/copydamage.png",
