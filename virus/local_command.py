@@ -12,40 +12,29 @@ class LocalCommand(commands.Cog):
             "pub?gid=1726418026&single=true&output=csv"
         )
 
-    async def get_csv_rows(self):
-        """Função auxiliar para buscar e normalizar linhas do CSV"""
-        async with aiohttp.ClientSession() as session:
-            async with session.get(self.url) as resp:
-                if resp.status != 200:
-                    raise ValueError("Não foi possível acessar a planilha.")
-                csv_text = await resp.text()
-
-        linhas = csv_text.splitlines()
-        # Garante que o cabeçalho correto existe
-        if "Name" not in linhas[0] and "Area" not in linhas[0]:
-            linhas = linhas[1:]
-
-        reader = csv.DictReader(linhas)
-        # Normaliza os nomes das colunas
-        reader.fieldnames = [h.strip().replace("\ufeff", "").lower() for h in reader.fieldnames]
-
-        # Normaliza cada linha: remove espaços extras
-        rows = []
-        for row in reader:
-            clean_row = {k.strip().lower(): v.strip() for k, v in row.items()}
-            rows.append(clean_row)
-        return rows
-
     @commands.command(name="locais")
     async def locais(self, ctx):
         """Lista todas as áreas disponíveis na planilha."""
         try:
-            rows = await self.get_csv_rows()
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.url) as resp:
+                    if resp.status != 200:
+                        await ctx.send("⚠️ Não foi possível acessar a planilha.")
+                        return
+                    csv_text = await resp.text()
+
+            linhas = csv_text.splitlines()
+            reader = csv.DictReader(linhas)
+            reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
+
             areas = set()
-            for row in rows:
-                area = row.get("area", "")
-                if area:
-                    areas.add(area)
+            for row in reader:
+                # Procura dinamicamente a coluna "Area"
+                col_area = next((k for k in row if "area" in k.lower()), None)
+                if col_area:
+                    area = row[col_area].strip()
+                    if area:
+                        areas.add(area)
 
             if not areas:
                 await ctx.send("❌ Nenhuma área encontrada na planilha.")
@@ -54,6 +43,7 @@ class LocalCommand(commands.Cog):
             areas_list = sorted(areas)
             texto = f"📍 **Áreas Disponíveis ({len(areas_list)}):**\n" + "\n".join(f"• {a}" for a in areas_list)
 
+            # Divide em blocos se muito longo
             if len(texto) > 2000:
                 partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
@@ -73,20 +63,34 @@ class LocalCommand(commands.Cog):
             return
 
         try:
-            rows = await self.get_csv_rows()
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.url) as resp:
+                    if resp.status != 200:
+                        await ctx.send("⚠️ Não foi possível acessar a planilha.")
+                        return
+                    csv_text = await resp.text()
+
+            linhas = csv_text.splitlines()
+            reader = csv.DictReader(linhas)
+            reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
+
             area_proc = area_nome.lower().strip()
             virus_encontrados = []
 
-            for row in rows:
-                area = row.get("area", "")
-                nome_virus = row.get("name", "")
-                if area and nome_virus:
-                    # busca exata
-                    if area_proc == area.lower():
-                        virus_encontrados.append(nome_virus)
-                    # busca parcial
-                    elif area_proc in area.lower():
-                        virus_encontrados.append(nome_virus)
+            for row in reader:
+                # Procura dinamicamente colunas "Area" e "Name"
+                col_area = next((k for k in row if "area" in k.lower()), None)
+                col_nome = next((k for k in row if "name" in k.lower()), None)
+                if col_area and col_nome:
+                    area = row[col_area].strip()
+                    nome_virus = row[col_nome].strip()
+                    if area and nome_virus:
+                        # busca exata
+                        if area_proc == area.lower():
+                            virus_encontrados.append(nome_virus)
+                        # busca parcial
+                        elif area_proc in area.lower():
+                            virus_encontrados.append(nome_virus)
 
             if not virus_encontrados:
                 await ctx.send(f"❌ Nenhum vírus encontrado na área **{area_nome}**.")
@@ -95,6 +99,7 @@ class LocalCommand(commands.Cog):
             virus_encontrados = sorted(virus_encontrados)
             texto = f"🦠 **Vírus encontrados na área {area_nome} ({len(virus_encontrados)}):**\n" + "\n".join(f"• {v}" for v in virus_encontrados)
 
+            # Divide em blocos se muito longo
             if len(texto) > 2000:
                 partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
