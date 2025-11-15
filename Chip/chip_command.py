@@ -3,7 +3,7 @@ from discord import Embed
 import aiohttp
 import csv
 
-# 👇 importa o dicionário com as imagens
+# 👇🏻 importa o dicionário com as imagens 👇🏻
 from Chip.chips_imagens import chips_imagens
 
 
