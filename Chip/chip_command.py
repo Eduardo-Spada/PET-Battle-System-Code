@@ -89,13 +89,15 @@ class ChipCommand(commands.Cog):
             await ctx.send(mensagem)
 
             # ------------------------------
-            #  🔥 Envia imagem separada
+            #  🔥 Imagem oculta o link (embed só da imagem)
             # ------------------------------
             nome_padrao = safe("Nome").lower().strip()
             imagem_url = chips_imagens.get(nome_padrao)
 
             if imagem_url:
-                await ctx.send(imagem_url)
+                embed_img = Embed()
+                embed_img.set_image(url=imagem_url)
+                await ctx.send(embed=embed_img)
 
         except Exception as e:
             print(f"❌ Erro no comando !chip: {e}")
