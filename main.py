@@ -49,7 +49,7 @@ async def setup_extensoes():
             print("⚔️ Extensão batalha.batalha carregada com sucesso!")
 
         # Extensão doc (documento informativo)
-        if "Links.Util.doc_command" not in bot.extensions:
+        if "Links.doc_command" not in bot.extensions:
             await bot.load_extension("Util.doc_command")
             print("📘 Extensão Util.doc_command carregada com sucesso!")
 
