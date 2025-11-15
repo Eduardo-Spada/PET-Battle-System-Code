@@ -52,9 +52,8 @@ class ChipCommand(commands.Cog):
                     chip_encontrado = row
                     break
 
-            # Busca parcial (se não achou na exata)
+            # Busca parcial se não achou
             if not chip_encontrado:
-                # CSV reader já foi esgotado, então precisa resetar
                 linhas = csv_text.splitlines()
                 if "Nome" not in linhas[0]:
                     linhas = linhas[1:]
@@ -76,23 +75,27 @@ class ChipCommand(commands.Cog):
             def safe(chave):
                 return chip_encontrado.get(chave, "Desconhecido")
 
-            # Monta Embed com os dados
-            embed = Embed(
-                title=f"💾 Chip: {safe('Nome')}",
-                color=0x00ffcc
+            # ------------------------------
+            #  🔥 Mensagem normal (sem embed)
+            # ------------------------------
+            mensagem = (
+                f"💾 **Chip: {safe('Nome')}**\n"
+                f"**Elemento:** {safe('Elemento')}\n"
+                f"**Dano:** {safe('Dano')}\n"
+                f"**Efeito:** {safe('Efeito')}\n"
+                f"**Rarity:** {safe('Rarity')}"
             )
-            embed.add_field(name="Elemento", value=safe('Elemento'), inline=False)
-            embed.add_field(name="Dano", value=safe('Dano'), inline=False)
-            embed.add_field(name="Efeito", value=safe('Efeito'), inline=False)
-            embed.add_field(name="Rarity", value=safe('Rarity'), inline=False)
 
-            # Pega imagem e adiciona no embed se existir
+            await ctx.send(mensagem)
+
+            # ------------------------------
+            #  🔥 Envia imagem separada
+            # ------------------------------
             nome_padrao = safe("Nome").lower().strip()
             imagem_url = chips_imagens.get(nome_padrao)
-            if imagem_url:
-                embed.set_image(url=imagem_url)
 
-            await ctx.send(embed=embed)
+            if imagem_url:
+                await ctx.send(imagem_url)
 
         except Exception as e:
             print(f"❌ Erro no comando !chip: {e}")
