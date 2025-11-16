@@ -43,7 +43,7 @@ class LocalCommand(commands.Cog):
             areas_list = sorted(areas)
             texto = f"📍 **Áreas Disponíveis ({len(areas_list)}):**\n" + "\n".join(f"• {a}" for a in areas_list)
 
-            # Divide em blocos se muito longo
+            # Divida em blocos se muito longo
             if len(texto) > 2000:
                 partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
                 for parte in partes:
