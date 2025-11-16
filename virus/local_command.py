@@ -23,7 +23,6 @@ class LocalCommand(commands.Cog):
                     csv_text = await resp.text()
 
             linhas = csv_text.splitlines()
-            # Pula a primeira linha se não tiver 'Area' no cabeçalho
             if "Area" not in linhas[0]:
                 linhas = linhas[1:]
 
@@ -36,13 +35,15 @@ class LocalCommand(commands.Cog):
                 if col_area:
                     area = row[col_area].strip()
                     if area:
-                        areas.add(area)
+                        # padroniza para evitar duplicados por diferença de acentos/maiúsculas
+                        areas.add(area.lower())
 
             if not areas:
                 await ctx.send("❌ Nenhuma área encontrada na planilha.")
                 return
 
-            areas_list = sorted(areas)
+            # Converte para lista com capitalização correta
+            areas_list = sorted(area.title() for area in areas)
             texto = f"📍 **Áreas Disponíveis ({len(areas_list)}):**\n" + "\n".join(f"• {a}" for a in areas_list)
             await ctx.send(texto)
 
@@ -83,13 +84,14 @@ class LocalCommand(commands.Cog):
                     nome_virus = row[col_nome].strip()
                     if area and nome_virus:
                         if area_proc == area.lower() or area_proc in area.lower():
-                            virus_encontrados.append(nome_virus)
+                            virus_encontrados.append(nome_virus.strip())
 
             if not virus_encontrados:
                 await ctx.send(f"❌ Nenhum vírus encontrado na área **{area_nome}**.")
                 return
 
-            virus_encontrados = sorted(virus_encontrados)
+            # Remove duplicados e ordena
+            virus_encontrados = sorted(set(virus_encontrados))
             texto = f"🦠 **Vírus encontrados na área {area_nome} ({len(virus_encontrados)}):**\n" + "\n".join(f"• {v}" for v in virus_encontrados)
             await ctx.send(texto)
 
