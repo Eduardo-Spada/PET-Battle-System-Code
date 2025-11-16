@@ -5,7 +5,6 @@ import csv
 class LocalCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # URL da planilha
         self.url = (
             "https://docs.google.com/spreadsheets/d/e/"
             "2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/"
@@ -24,12 +23,15 @@ class LocalCommand(commands.Cog):
                     csv_text = await resp.text()
 
             linhas = csv_text.splitlines()
+            # Pula a primeira linha se não tiver 'Area' no cabeçalho
+            if "Area" not in linhas[0]:
+                linhas = linhas[1:]
+
             reader = csv.DictReader(linhas)
             reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
 
             areas = set()
             for row in reader:
-                # Procura dinamicamente a coluna "Area"
                 col_area = next((k for k in row if "area" in k.lower()), None)
                 if col_area:
                     area = row[col_area].strip()
@@ -42,14 +44,7 @@ class LocalCommand(commands.Cog):
 
             areas_list = sorted(areas)
             texto = f"📍 **Áreas Disponíveis ({len(areas_list)}):**\n" + "\n".join(f"• {a}" for a in areas_list)
-
-            # Divida em blocos se muito longo
-            if len(texto) > 2000:
-                partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
-                for parte in partes:
-                    await ctx.send(f"```{parte}```")
-            else:
-                await ctx.send(f"```{texto}```")
+            await ctx.send(texto)
 
         except Exception as e:
             print(f"❌ Erro no comando !locais: {e}")
@@ -71,6 +66,9 @@ class LocalCommand(commands.Cog):
                     csv_text = await resp.text()
 
             linhas = csv_text.splitlines()
+            if "Area" not in linhas[0]:
+                linhas = linhas[1:]
+
             reader = csv.DictReader(linhas)
             reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
 
@@ -78,18 +76,13 @@ class LocalCommand(commands.Cog):
             virus_encontrados = []
 
             for row in reader:
-                # Procura dinamicamente colunas "Area" e "Name"
                 col_area = next((k for k in row if "area" in k.lower()), None)
                 col_nome = next((k for k in row if "name" in k.lower()), None)
                 if col_area and col_nome:
                     area = row[col_area].strip()
                     nome_virus = row[col_nome].strip()
                     if area and nome_virus:
-                        # busca exata
-                        if area_proc == area.lower():
-                            virus_encontrados.append(nome_virus)
-                        # busca parcial
-                        elif area_proc in area.lower():
+                        if area_proc == area.lower() or area_proc in area.lower():
                             virus_encontrados.append(nome_virus)
 
             if not virus_encontrados:
@@ -98,14 +91,7 @@ class LocalCommand(commands.Cog):
 
             virus_encontrados = sorted(virus_encontrados)
             texto = f"🦠 **Vírus encontrados na área {area_nome} ({len(virus_encontrados)}):**\n" + "\n".join(f"• {v}" for v in virus_encontrados)
-
-            # Divide em blocos se muito longo
-            if len(texto) > 2000:
-                partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
-                for parte in partes:
-                    await ctx.send(f"```{parte}```")
-            else:
-                await ctx.send(f"```{texto}```")
+            await ctx.send(texto)
 
         except Exception as e:
             print(f"❌ Erro no comando !local: {e}")
