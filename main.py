@@ -4,9 +4,6 @@ import os
 import asyncio
 from manter_vivo import manter_vivo
 
-# IMPORTANTE → importa a View para registrá-la globalmente
-from Ajuda.sos_command import SOSPaginas
-
 # Mantém o bot vivo (Replit)
 manter_vivo()
 
@@ -72,14 +69,9 @@ async def setup_extensoes():
 # ──▲──────────────────────────────────────────────────────────────────
 
 
-# ──▼ Evento on_ready — REGISTRA A VIEW (OBRIGATÓRIO) ───────────────────
+# ──▼ Evento on_ready ---------------------------------------------------
 @bot.event
 async def on_ready():
-    try:
-        bot.add_view(SOSPaginas())  # registra view permanente
-    except Exception as e:
-        print(f"⚠️ View já registrada ou erro: {e}")
-
     print(f"✅ Bot está online como {bot.user}")
 # ──▲──────────────────────────────────────────────────────────────────
 
