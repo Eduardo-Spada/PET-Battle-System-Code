@@ -73,6 +73,23 @@ async def on_ready():
     print(f"✅ Bot está online como {bot.user}")
 
 
+# ──▼ Responder quando mencionarem o bot --------------------------------
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+
+    # Se o bot for mencionado
+    if bot.user in message.mentions:
+        await message.channel.send(
+            f"👋 Oi {message.author.mention}! Se precisar de ajuda, use **!sos**."
+        )
+
+    # Permite que comandos funcionem normalmente
+    await bot.process_commands(message)
+# ──▲──────────────────────────────────────────────────────────────────
+
+
 # ──▼ Comando simples ----------------------------------------------------
 @bot.command()
 async def oi(ctx):
