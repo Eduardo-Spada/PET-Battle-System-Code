@@ -1,7 +1,6 @@
 from discord.ext import commands
 from discord import Embed, ui, Interaction
 
-# Lista de comandos (adicione mais futuramente)
 COMANDOS = [
     "🦠 `!virus Nome` – Mostra dados de um vírus.",
     "🦠 `!viruslist` – Lista todos os vírus.",
@@ -22,10 +21,9 @@ COMANDOS = [
 
 ITENS_POR_PAGINA = 6
 
-
 class SOSPaginas(ui.View):
     def __init__(self):
-        super().__init__(timeout=None)
+        super().__init__(timeout=300)  # View temporária, NÃO permanente
         self.paginas = self.gerar_paginas()
         self.index = 0
 
@@ -60,11 +58,10 @@ class SOSPaginas(ui.View):
 class SOSCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        bot.add_view(SOSPaginas())  # <-- **AQUI ESTÁ O SEGREDO ABSOLUTO**
 
     @commands.command(name="sos")
     async def sos(self, ctx):
-        view = SOSPaginas()
+        view = SOSPaginas()  # view NOVA a cada comando
         await ctx.send(embed=view.paginas[0], view=view)
 
 
