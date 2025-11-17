@@ -1,7 +1,7 @@
 from discord.ext import commands
 from discord import Embed, ui, Interaction
 
-# Lista de comandos (adicione quantos quiser)
+# Lista de comandos (adicione mais futuramente)
 COMANDOS = [
     "🦠 `!virus Nome` – Mostra dados de um vírus.",
     "🦠 `!viruslist` – Lista todos os vírus.",
@@ -18,10 +18,9 @@ COMANDOS = [
     "📊 `!status` – Mostra status.",
     "📘 `!doc` – Abre documento informativo.",
     "🤖 `!oi` – Teste do bot.",
-    # ADICIONE MAIS SEM MEDO — PÁGINAS INFINITAS!
 ]
 
-ITENS_POR_PAGINA = 6  # quantidade de comandos por página
+ITENS_POR_PAGINA = 6
 
 
 class SOSPaginas(ui.View):
@@ -34,28 +33,23 @@ class SOSPaginas(ui.View):
         paginas = []
         total = len(COMANDOS)
 
-        # Criar páginas automaticamente
         for i in range(0, total, ITENS_POR_PAGINA):
-            comandos_pagina = COMANDOS[i:i + ITENS_POR_PAGINA]
-
+            comandos = COMANDOS[i:i+ITENS_POR_PAGINA]
             embed = Embed(
-                title=f"📘 Lista de Comandos — Página {len(paginas)+1}",
-                description="\n".join(comandos_pagina),
+                title=f"📘 Comandos — Página {len(paginas)+1}",
+                description="\n".join(comandos),
                 color=0x3498db
             )
-
             paginas.append(embed)
 
         return paginas
 
-    # Botão voltar
     @ui.button(label="⬅️ Voltar", style=2)
     async def voltar(self, interaction: Interaction, button: ui.Button):
         if self.index > 0:
             self.index -= 1
         await interaction.response.edit_message(embed=self.paginas[self.index], view=self)
 
-    # Botão avançar
     @ui.button(label="➡️ Avançar", style=2)
     async def avancar(self, interaction: Interaction, button: ui.Button):
         if self.index < len(self.paginas) - 1:
@@ -66,6 +60,7 @@ class SOSPaginas(ui.View):
 class SOSCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        bot.add_view(SOSPaginas())  # <-- **AQUI ESTÁ O SEGREDO ABSOLUTO**
 
     @commands.command(name="sos")
     async def sos(self, ctx):
