@@ -4,6 +4,9 @@ import os
 import asyncio
 from manter_vivo import manter_vivo
 
+# IMPORTANTE → importa a View para registrá-la globalmente
+from Ajuda.sos_command import SOSPaginas
+
 # Mantém o bot vivo (Replit)
 manter_vivo()
 
@@ -13,6 +16,7 @@ intents.message_content = True
 
 # Inicializa o bot
 bot = commands.Bot(command_prefix="!", intents=intents)
+
 
 # ──▼ Carregar extensões ───────────────────────────────────────────────
 async def setup_extensoes():
@@ -68,9 +72,16 @@ async def setup_extensoes():
 # ──▲──────────────────────────────────────────────────────────────────
 
 
+# ──▼ Evento on_ready — REGISTRA A VIEW (OBRIGATÓRIO) ───────────────────
 @bot.event
 async def on_ready():
+    try:
+        bot.add_view(SOSPaginas())  # registra view permanente
+    except Exception as e:
+        print(f"⚠️ View já registrada ou erro: {e}")
+
     print(f"✅ Bot está online como {bot.user}")
+# ──▲──────────────────────────────────────────────────────────────────
 
 
 # ──▼ Responder quando mencionarem o bot --------------------------------
@@ -79,13 +90,11 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Se o bot for mencionado
     if bot.user in message.mentions:
         await message.channel.send(
             f"👋 Oi {message.author.mention}! Se precisar de ajuda, use **!sos**."
         )
 
-    # Permite que comandos funcionem normalmente
     await bot.process_commands(message)
 # ──▲──────────────────────────────────────────────────────────────────
 
