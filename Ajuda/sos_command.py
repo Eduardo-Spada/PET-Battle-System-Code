@@ -62,7 +62,7 @@ class SOSCommand(commands.Cog):
     @commands.command(name="sos")
     async def sos(self, ctx):
         view = SOSPaginas()  # view NOVA a cada comando
-        await ctx.send(embed=view.paginas[0], view=view)
+        await ctx.send(content="📘 Comandos do bot:", embed=view.paginas[0], view=view)
 
 
 async def setup(bot):
