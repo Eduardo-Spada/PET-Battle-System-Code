@@ -11,9 +11,12 @@ manter_vivo()
 intents = discord.Intents.default()
 intents.message_content = True
 
-# Inicializa o bot
-bot = commands.Bot(command_prefix="!", intents=intents)
-
+# Inicializa o bot (help removido)
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    help_command=None
+)
 
 # ──▼ Carregar extensões ───────────────────────────────────────────────
 async def setup_extensoes():
