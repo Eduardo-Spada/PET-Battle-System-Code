@@ -1,7 +1,7 @@
+import discord
 from discord.ext import commands
-from discord import ui, Interaction
 
-# Lista de comandos exibidos nas páginas
+# Lista de comandos que vão aparecer
 COMANDOS = [
     "🦠 !virus Nome – Mostra dados de um vírus.",
     "🦠 !viruslist – Lista todos os vírus.",
@@ -20,55 +20,45 @@ COMANDOS = [
     "🤖 !oi – Teste do bot.",
 ]
 
+# Quantos itens por página
 ITENS_POR_PAGINA = 6
 
 
-# ─────────────────────────────────────────────────────────
-# Montagem das páginas
-# ─────────────────────────────────────────────────────────
-def gerar_paginas():
-    paginas = []
-    total = len(COMANDOS)
-    total_paginas = ((total - 1) // ITENS_POR_PAGINA) + 1
-
-    for i in range(0, total, ITENS_POR_PAGINA):
-        comandos = COMANDOS[i:i + ITENS_POR_PAGINA]
-
-        pagina_txt = (
-            "📘 **Comandos do bot**\n\n"
-            f"**Página {len(paginas) + 1}/{total_paginas}:**\n\n"
-            + "\n".join(comandos)
-        )
-        paginas.append(pagina_txt)
-
-    return paginas
-
-
-# ─────────────────────────────────────────────────────────
-# Sistema de Navegação
-# ─────────────────────────────────────────────────────────
-class SOSPaginas(ui.View):
-    def __init__(self):
-        super().__init__(timeout=300)
-        self.paginas = gerar_paginas()
+# =====================================================================
+# VIEW DO PAGINADOR  — igual ao chipslist, mas adaptada
+# =====================================================================
+class PaginadorSOS(discord.ui.View):
+    def __init__(self, paginas, total):
+        super().__init__(timeout=300)  
+        self.paginas = paginas
+        self.total = total
         self.index = 0
+
+    def formatar_pagina(self):
+        lista_formatada = "\n".join(f"{cmd}" for cmd in self.paginas[self.index])
+
+        return (
+            f"📘 **Comandos do Bot ({self.total} no total)**\n"
+            f"**Página {self.index+1}/{len(self.paginas)}:**\n\n"
+            f"{lista_formatada}"
+        )
 
     async def update_message(self, interaction):
         await interaction.response.edit_message(
-            content=self.paginas[self.index],
+            content=self.formatar_pagina(),
             view=self
         )
 
-    @ui.button(label="⬅️ Voltar", style=2)
-    async def voltar(self, interaction: Interaction, button: ui.Button):
+    @discord.ui.button(label="⬅️ Anterior", style=discord.ButtonStyle.secondary)
+    async def anterior(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.index > 0:
             self.index -= 1
             await self.update_message(interaction)
         else:
             await interaction.response.defer()
 
-    @ui.button(label="➡️ Avançar", style=2)
-    async def avancar(self, interaction: Interaction, button: ui.Button):
+    @discord.ui.button(label="Próximo ➡️", style=discord.ButtonStyle.secondary)
+    async def proximo(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.index < len(self.paginas) - 1:
             self.index += 1
             await self.update_message(interaction)
@@ -76,18 +66,26 @@ class SOSPaginas(ui.View):
             await interaction.response.defer()
 
 
-# ─────────────────────────────────────────────────────────
-# Comando SOS
-# ─────────────────────────────────────────────────────────
-class SOSCommand(commands.Cog):
+# =====================================================================
+# COG DO SOS — igual ao chipslist
+# =====================================================================
+class SOS(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command(name="sos")
     async def sos(self, ctx):
-        view = SOSPaginas()
-        await ctx.send(content=view.paginas[0], view=view)
+        total = len(COMANDOS)
+
+        # divide em páginas
+        paginas = [
+            COMANDOS[i:i + ITENS_POR_PAGINA]
+            for i in range(0, total, ITENS_POR_PAGINA)
+        ]
+
+        view = PaginadorSOS(paginas, total)
+        await ctx.send(view.formatar_pagina(), view=view)
 
 
 async def setup(bot):
-    await bot.add_cog(SOSCommand(bot))
+    await bot.add_cog(SOS(bot))

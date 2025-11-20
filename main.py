@@ -11,11 +11,12 @@ manter_vivo()
 intents = discord.Intents.default()
 intents.message_content = True
 
-# Inicializa o bot (help removido)
+# Inicializa o bot (help removido, case-insensitive para aceitar !Sos etc)
 bot = commands.Bot(
     command_prefix="!",
     intents=intents,
-    help_command=None
+    help_command=None,
+    case_insensitive=True
 )
 
 # ──▼ Carregar extensões ───────────────────────────────────────────────
