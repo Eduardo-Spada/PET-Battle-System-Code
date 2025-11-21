@@ -140,45 +140,50 @@ class EncontroCommand(commands.Cog):
             "`!encontro Área virus:X`"
         )
 
+
     # -------------------------------------------------------------
-    # Comando de teste !vamo — mostra todos vírus de "Todas As Áreas"
-    # -------------------------------------------------------------
-    @commands.command(name="vamo")
-    async def vamo(self, ctx):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(self.url) as resp:
-                if resp.status != 200:
-                    await ctx.send("❌ Não foi possível acessar a planilha.")
-                    return
-                csv_text = await resp.text()
+# Comando de teste !vamo — mostra todos vírus de "Todas As Áreas"
+# -------------------------------------------------------------
+@commands.command(name="vamo")
+async def vamo(self, ctx):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(self.url) as resp:
+            if resp.status != 200:
+                await ctx.send("❌ Não foi possível acessar a planilha.")
+                return
+            csv_text = await resp.text()
 
-        linhas = csv_text.splitlines()
-        if "Area" not in linhas[0]:
-            linhas = linhas[1:]
+    linhas = csv_text.splitlines()
+    if "Area" not in linhas[0]:
+        linhas = linhas[1:]
 
-        reader = csv.DictReader(linhas)
-        reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
+    reader = csv.DictReader(linhas)
+    reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
 
-        virus_todas = []
+    virus_todas = []
 
-        for row in reader:
-            col_area = next((k for k in row if "area" in k.lower()), None)
-            col_nome = next((k for k in row if "name" in k.lower()), None)
+    def limpar_texto(t):
+        return re.sub(r"[^\w\s]", "", t.lower().strip())
 
-            if col_area and col_nome:
-                area = row[col_area].strip()
-                nome = row[col_nome].strip()
-                if area.lower() == "todas as áreas" and nome:
-                    virus_todas.append(nome)
+    for row in reader:
+        col_area = next((k for k in row if "area" in k.lower()), None)
+        col_nome = next((k for k in row if "name" in k.lower()), None)
 
-        if not virus_todas:
-            await ctx.send("❌ Nenhum vírus encontrado para 'Todas As Áreas'.")
-            return
+        if col_area and col_nome:
+            area = row[col_area].strip()
+            nome = row[col_nome].strip()
+            if limpar_texto(area) == "todas as áreas" and nome:
+                virus_todas.append(nome)
 
-        texto = "🦠 Vírus de 'Todas As Áreas':\n"
-        texto += "\n".join(f"• {v}" for v in virus_todas)
+    if not virus_todas:
+        await ctx.send("❌ Nenhum vírus encontrado para 'Todas As Áreas'.")
+        return
 
-        await self.enviar_paginado(ctx, texto)
+    texto = "🦠 Vírus de 'Todas As Áreas':\n"
+    texto += "\n".join(f"• {v}" for v in virus_todas)
+
+    await self.enviar_paginado(ctx, texto)
+
 
     # -------------------------------------------------------------
     # Paginação — SEM BLOCO DE CÓDIGO
