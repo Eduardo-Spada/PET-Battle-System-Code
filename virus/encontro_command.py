@@ -1,9 +1,8 @@
-"""from discord.ext import commands
+from discord.ext import commands
 import aiohttp
 import csv
 import random
 import re
-import unicodedata
 
 
 class EncontroCommand(commands.Cog):
@@ -14,17 +13,6 @@ class EncontroCommand(commands.Cog):
             "2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/"
             "pub?gid=1726418026&single=true&output=csv"
         )
-
-    # -------------------------------------------------------------
-    # Helper: normalizar texto (remove acentos, lower, strip)
-    # -------------------------------------------------------------
-    def _normalize(self, text):
-        if not text:
-            return ""
-        t = text.strip().lower()
-        t = unicodedata.normalize("NFKD", t)
-        t = "".join(c for c in t if not unicodedata.combining(c))
-        return t
 
     # -------------------------------------------------------------
     # Buscar vírus da área
@@ -43,7 +31,7 @@ class EncontroCommand(commands.Cog):
         reader = csv.DictReader(linhas)
         reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
 
-        area_proc = self._normalize(area_nome)
+        area_proc = area_nome.lower().strip()
         virus = []
 
         for row in reader:
@@ -51,20 +39,10 @@ class EncontroCommand(commands.Cog):
             col_nome = next((k for k in row if "name" in k.lower()), None)
 
             if col_area and col_nome:
-                raw_area = row[col_area].strip()
+                area = row[col_area].strip()
                 nome = row[col_nome].strip()
-                if raw_area and nome:
-                    # split por vários separadores e normalize cada parte
-                    partes = [p for p in re.split(r'[;,/|]', raw_area) if p.strip()]
-                    partes_norm = [self._normalize(p) for p in partes]
-
-                    # reconhece "Todas As Áreas" mesmo sem acento ou com variações
-                    if any(p == "todas as areas" for p in partes_norm):
-                        virus.append(nome)
-                        continue
-
-                    # inclui se alguma parte corresponder à área procurada (exata ou substring)
-                    if any(area_proc == p or area_proc in p or p in area_proc for p in partes_norm):
+                if area and nome:
+                    if area_proc == area.lower() or area_proc in area.lower():
                         virus.append(nome)
 
         return virus if virus else None
@@ -177,4 +155,3 @@ class EncontroCommand(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(EncontroCommand(bot))
-"""
