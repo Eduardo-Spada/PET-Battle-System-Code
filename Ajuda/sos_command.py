@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-# Lista de comandos que vão aparecer
+# Lista de comandos que vão aparecer no !sos
 COMANDOS = [
     "🦠 !virus Nome – Mostra dados de um vírus.",
     "🦠 !viruslist – Lista todos os vírus.",
@@ -18,6 +18,9 @@ COMANDOS = [
     "📊 !status – Mostra status.",
     "📘 !doc – Abre documento informativo.",
     "🤖 !oi – Teste do bot.",
+    "🎲 !encontro Área – Sorteia vírus de uma área + 'Todas as Áreas'.",
+    "🎲 !encontro Área players:X – Sorteia vírus para X jogadores.",
+    "🎲 !encontro Área virus:X – Sorteia quantidade definida de vírus.",
 ]
 
 # Quantos itens por página
@@ -36,7 +39,6 @@ class PaginadorSOS(discord.ui.View):
 
     def formatar_pagina(self):
         lista_formatada = "\n".join(f"{cmd}" for cmd in self.paginas[self.index])
-
         return (
             f"📘 **Comandos do Bot ({self.total} no total)**\n"
             f"**Página {self.index+1}/{len(self.paginas)}:**\n\n"
