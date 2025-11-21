@@ -68,6 +68,11 @@ async def setup_extensoes():
             await bot.load_extension("Ajuda.sos_command")
             print("🆘 Extensão Ajuda.sos_command carregada com sucesso!")
 
+        # Extensão ENCONTRO (Nova)
+        if "virus.encontro_command" not in bot.extensions:
+            await bot.load_extension("virus.encontro_command")
+            print("🎲 Extensão virus.encontro_command carregada com sucesso!")
+
     except Exception as e:
         print(f"❌ Erro ao carregar extensões: {e}")
 # ──▲──────────────────────────────────────────────────────────────────
@@ -86,6 +91,7 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
+    # Se alguém mencionar o bot @Salada Alpaca
     if bot.user in message.mentions:
         await message.channel.send(
             f"👋 Oi {message.author.mention}! Se precisar de ajuda, use **!sos**."
