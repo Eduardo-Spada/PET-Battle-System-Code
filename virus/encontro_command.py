@@ -44,6 +44,8 @@ class EncontroCommand(commands.Cog):
         area_proc = self.limpar_texto(area_nome)
         virus = []
 
+        virus_todas = []  # Lista para os vírus de "Todas as áreas."
+
         for row in reader:
             col_area = next((k for k in row if "area" in k.lower()), None)
             col_nome = next((k for k in row if "name" in k.lower()), None)
@@ -54,8 +56,12 @@ class EncontroCommand(commands.Cog):
                 if area and nome:
                     if area_proc == area or area_proc in area:
                         virus.append(nome)
+                    if "todas as areas" in area:
+                        virus_todas.append(nome)
 
-        return virus if virus else None
+        # Combina a lista da área específica + todas as áreas
+        virus_final = virus + virus_todas
+        return virus_final if virus_final else None
 
     # -------------------------------------------------------------
     # Comando !encontro
@@ -149,20 +155,6 @@ class EncontroCommand(commands.Cog):
             "`!encontro Área players:X`\n"
             "`!encontro Área virus:X`"
         )
-
-    # -------------------------------------------------------------
-    # Comando !vamo (corrigido para pegar "Todas as áreas." da planilha)
-    # -------------------------------------------------------------
-    @commands.command(name="vamo")
-    async def vamo(self, ctx):
-        virus_todas = await self.coletar_virus_da_area("Todas as áreas.")
-        if not virus_todas:
-            await ctx.send("❌ Nenhum vírus encontrado para 'Todas as Áreas'.")
-            return
-
-        virus_todas = sorted(set(virus_todas))
-        texto = "🦠 **Vírus de Todas As Áreas:**\n" + "\n".join(f"• {v}" for v in virus_todas)
-        await self.enviar_paginado(ctx, texto)
 
     # -------------------------------------------------------------
     # Paginação — SEM BLOCO DE CÓDIGO
