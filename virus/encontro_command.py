@@ -3,6 +3,7 @@ import aiohttp
 import csv
 import random
 import re
+import unicodedata
 
 
 class EncontroCommand(commands.Cog):
@@ -13,6 +14,15 @@ class EncontroCommand(commands.Cog):
             "2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/"
             "pub?gid=1726418026&single=true&output=csv"
         )
+
+    # -------------------------------------------------------------
+    # Função para limpar texto (remove acentos e normaliza)
+    # -------------------------------------------------------------
+    def limpar_texto(self, t: str):
+        t = t.lower().strip()
+        t = unicodedata.normalize("NFD", t)
+        t = "".join(c for c in t if unicodedata.category(c) != "Mn")
+        return t
 
     # -------------------------------------------------------------
     # Buscar vírus da área
@@ -31,7 +41,7 @@ class EncontroCommand(commands.Cog):
         reader = csv.DictReader(linhas)
         reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
 
-        area_proc = area_nome.lower().strip()
+        area_proc = self.limpar_texto(area_nome)
         virus = []
 
         for row in reader:
@@ -39,10 +49,10 @@ class EncontroCommand(commands.Cog):
             col_nome = next((k for k in row if "name" in k.lower()), None)
 
             if col_area and col_nome:
-                area = row[col_area].strip()
+                area = self.limpar_texto(row[col_area])
                 nome = row[col_nome].strip()
                 if area and nome:
-                    if area_proc == area.lower() or area_proc in area.lower():
+                    if area_proc == area or area_proc in area:
                         virus.append(nome)
 
         return virus if virus else None
@@ -141,54 +151,18 @@ class EncontroCommand(commands.Cog):
         )
 
     # -------------------------------------------------------------
-    # Comando !vamo (corrigido, igual ao !local)
+    # Comando !vamo (corrigido para pegar "Todas as áreas." da planilha)
     # -------------------------------------------------------------
     @commands.command(name="vamo")
     async def vamo(self, ctx):
+        virus_todas = await self.coletar_virus_da_area("Todas as áreas.")
+        if not virus_todas:
+            await ctx.send("❌ Nenhum vírus encontrado para 'Todas as Áreas'.")
+            return
 
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.url) as resp:
-                    if resp.status != 200:
-                        await ctx.send("❌ Não foi possível acessar a planilha.")
-                        return
-                    csv_text = await resp.text()
-
-            linhas = csv_text.splitlines()
-            if "Area" not in linhas[0]:
-                linhas = linhas[1:]
-
-            reader = csv.DictReader(linhas)
-            reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
-
-            virus_todas = []
-
-            for row in reader:
-                col_area = next((k for k in row if "area" in k.lower()), None)
-                col_nome = next((k for k in row if "name" in k.lower()), None)
-
-                if col_area and col_nome:
-                    area = row[col_area].strip().lower()
-                    nome = row[col_nome].strip()
-
-                    # igual ao !local → sem acentos, sem frescura
-                    if "todas as areas" in area and nome:
-                        virus_todas.append(nome)
-
-            if not virus_todas:
-                await ctx.send("❌ Nenhum vírus encontrado para 'Todas As Areas'.")
-                return
-
-            virus_todas = sorted(set(virus_todas))
-
-            texto = "🦠 **Vírus de Todas As Areas:**\n"
-            texto += "\n".join(f"• {v}" for v in virus_todas)
-
-            await self.enviar_paginado(ctx, texto)
-
-        except Exception as e:
-            print(f"❌ Erro no comando !vamo: {e}")
-            await ctx.send("⚠️ Ocorreu um erro ao tentar buscar os vírus.")
+        virus_todas = sorted(set(virus_todas))
+        texto = "🦠 **Vírus de Todas As Áreas:**\n" + "\n".join(f"• {v}" for v in virus_todas)
+        await self.enviar_paginado(ctx, texto)
 
     # -------------------------------------------------------------
     # Paginação — SEM BLOCO DE CÓDIGO
