@@ -42,7 +42,12 @@ class EncontroCommand(commands.Cog):
                 area = row[col_area].strip()
                 nome = row[col_nome].strip()
                 if area and nome:
-                    if area_proc == area.lower() or area_proc in area.lower():
+                    # Inclui vírus se for da área procurada OU se for "Todas As Áreas"
+                    if (
+                        area_proc == area.lower()
+                        or area_proc in area.lower()
+                        or area.lower() == "todas as áreas"
+                    ):
                         virus.append(nome)
 
         return virus if virus else None
