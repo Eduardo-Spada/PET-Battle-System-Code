@@ -25,6 +25,23 @@ class EncontroCommand(commands.Cog):
         return t
 
     # -------------------------------------------------------------
+    # Compressão da lista (Mettaur (3x), etc)
+    # -------------------------------------------------------------
+    def comprimir_lista(self, lista):
+        contagem = {}
+        for item in lista:
+            contagem[item] = contagem.get(item, 0) + 1
+
+        resultado = []
+        for nome, qtd in contagem.items():
+            if qtd > 1:
+                resultado.append(f"{nome} ({qtd}x)")
+            else:
+                resultado.append(nome)
+
+        return resultado
+
+    # -------------------------------------------------------------
     # Buscar vírus da área
     # -------------------------------------------------------------
     async def coletar_virus_da_area(self, area_nome):
@@ -43,8 +60,7 @@ class EncontroCommand(commands.Cog):
 
         area_proc = self.limpar_texto(area_nome)
         virus = []
-
-        virus_todas = []  # Lista para os vírus de "Todas as áreas."
+        virus_todas = []
 
         for row in reader:
             col_area = next((k for k in row if "area" in k.lower()), None)
@@ -59,7 +75,6 @@ class EncontroCommand(commands.Cog):
                     if "todas as areas" in area:
                         virus_todas.append(nome)
 
-        # Combina a lista da área específica + todas as áreas
         virus_final = virus + virus_todas
         return virus_final if virus_final else None
 
@@ -94,10 +109,12 @@ class EncontroCommand(commands.Cog):
             qtd = random.randint(1, 3)
             sorteados = [random.choice(virus_area) for _ in range(qtd)]
 
-            texto = f"🎲 Quantidade de Vírus: {qtd}\n\n"
-            texto += "🦠 Resultado:\n" + "\n".join(f"• {v}" for v in sorteados)
+            compressos = self.comprimir_lista(sorteados)
 
-            await self.enviar_paginado(ctx, texto)
+            texto = f"🎲 Quantidade de Vírus: {qtd}\n\n"
+            texto += "🦠 Resultado:\n" + "\n".join(f"• {v}" for v in compressos)
+
+            await ctx.send(texto)
             return
 
         # ---------------------------------------------------------
@@ -117,15 +134,17 @@ class EncontroCommand(commands.Cog):
 
             for i in range(1, players + 1):
                 qtd = random.randint(1, 3)
-                rolls.append(f"🎲 Jogador {i} → {qtd} vírus")
                 selecionados = [random.choice(virus_area) for _ in range(qtd)]
                 total_virus.extend(selecionados)
+                rolls.append(f"🎲 Jogador {i} → {qtd} vírus")
+
+            compressos = self.comprimir_lista(total_virus)
 
             texto = "\n".join(rolls)
             texto += "\n\n🦠 Resultado final:\n"
-            texto += "\n".join(f"• {v}" for v in total_virus)
+            texto += "\n".join(f"• {v}" for v in compressos)
 
-            await self.enviar_paginado(ctx, texto)
+            await ctx.send(texto)
             return
 
         # ---------------------------------------------------------
@@ -141,12 +160,13 @@ class EncontroCommand(commands.Cog):
                 return
 
             sorteados = [random.choice(virus_area) for _ in range(qtd)]
+            compressos = self.comprimir_lista(sorteados)
 
             texto = f"🎲 Quantidade definida: {qtd}\n\n"
             texto += "🦠 Resultado:\n"
-            texto += "\n".join(f"• {v}" for v in sorteados)
+            texto += "\n".join(f"• {v}" for v in compressos)
 
-            await self.enviar_paginado(ctx, texto)
+            await ctx.send(texto)
             return
 
         await ctx.send(
@@ -155,18 +175,6 @@ class EncontroCommand(commands.Cog):
             "`!encontro Área players:X`\n"
             "`!encontro Área virus:X`"
         )
-
-    # -------------------------------------------------------------
-    # Paginação — SEM BLOCO DE CÓDIGO
-    # -------------------------------------------------------------
-    async def enviar_paginado(self, ctx, texto):
-        if len(texto) <= 1990:
-            await ctx.send(texto)
-            return
-
-        partes = [texto[i:i + 1990] for i in range(0, len(texto), 1990)]
-        for parte in partes:
-            await ctx.send(parte)
 
 
 async def setup(bot):
