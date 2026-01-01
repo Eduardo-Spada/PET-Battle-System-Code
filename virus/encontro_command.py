@@ -4,6 +4,7 @@ import csv
 import random
 import re
 import unicodedata
+from collections import Counter
 
 
 class EncontroCommand(commands.Cog):
@@ -23,23 +24,6 @@ class EncontroCommand(commands.Cog):
         t = unicodedata.normalize("NFD", t)
         t = "".join(c for c in t if unicodedata.category(c) != "Mn")
         return t
-
-    # -------------------------------------------------------------
-    # Compressão da lista (Mettaur (3x), etc)
-    # -------------------------------------------------------------
-    def comprimir_lista(self, lista):
-        contagem = {}
-        for item in lista:
-            contagem[item] = contagem.get(item, 0) + 1
-
-        resultado = []
-        for nome, qtd in contagem.items():
-            if qtd > 1:
-                resultado.append(f"{nome} ({qtd}x)")
-            else:
-                resultado.append(nome)
-
-        return resultado
 
     # -------------------------------------------------------------
     # Buscar vírus da área
@@ -107,12 +91,13 @@ class EncontroCommand(commands.Cog):
         # ---------------------------------------------------------
         if opcional == "":
             qtd = random.randint(1, 3)
-            sorteados = [random.choice(virus_area) for _ in range(qtd)]
+            contagem = Counter(random.choices(virus_area, k=qtd))
 
-            compressos = self.comprimir_lista(sorteados)
-
-            texto = f"🎲 Quantidade de Vírus: {qtd}\n\n"
-            texto += "🦠 Resultado:\n" + "\n".join(f"• {v}" for v in compressos)
+            texto = f"🎲 Quantidade de Vírus: {qtd}\n\n🦠 Resultado:\n"
+            texto += "\n".join(
+                f"• {nome} ({q}x)" if q > 1 else f"• {nome}"
+                for nome, q in contagem.items()
+            )
 
             await ctx.send(texto)
             return
@@ -129,26 +114,27 @@ class EncontroCommand(commands.Cog):
                 await ctx.send("❌ Use: `!encontro Área players:3`")
                 return
 
+            total_contagem = Counter()
             rolls = []
-            total_virus = []
 
             for i in range(1, players + 1):
                 qtd = random.randint(1, 3)
-                selecionados = [random.choice(virus_area) for _ in range(qtd)]
-                total_virus.extend(selecionados)
+                picks = random.choices(virus_area, k=qtd)
+                total_contagem.update(picks)
                 rolls.append(f"🎲 Jogador {i} → {qtd} vírus")
-
-            compressos = self.comprimir_lista(total_virus)
 
             texto = "\n".join(rolls)
             texto += "\n\n🦠 Resultado final:\n"
-            texto += "\n".join(f"• {v}" for v in compressos)
+            texto += "\n".join(
+                f"• {nome} ({q}x)" if q > 1 else f"• {nome}"
+                for nome, q in total_contagem.items()
+            )
 
             await ctx.send(texto)
             return
 
         # ---------------------------------------------------------
-        # Caso 3 — virus:X
+        # Caso 3 — virus:X  (SUPORTA 1 MILHÃO)
         # ---------------------------------------------------------
         if opcional.lower().startswith("virus:"):
             try:
@@ -159,12 +145,13 @@ class EncontroCommand(commands.Cog):
                 await ctx.send("❌ Use: `!encontro Área virus:5`")
                 return
 
-            sorteados = [random.choice(virus_area) for _ in range(qtd)]
-            compressos = self.comprimir_lista(sorteados)
+            contagem = Counter(random.choices(virus_area, k=qtd))
 
-            texto = f"🎲 Quantidade definida: {qtd}\n\n"
-            texto += "🦠 Resultado:\n"
-            texto += "\n".join(f"• {v}" for v in compressos)
+            texto = f"🎲 Quantidade definida: {qtd}\n\n🦠 Resultado:\n"
+            texto += "\n".join(
+                f"• {nome} ({q}x)" if q > 1 else f"• {nome}"
+                for nome, q in contagem.items()
+            )
 
             await ctx.send(texto)
             return
