@@ -259,24 +259,35 @@ class RewardsCommand(commands.Cog):
 
         # Rola recompensas
         for virus, qtd in virus_lista.items():
-            reward_txt = await self.buscar_rewards(virus)
-            if not reward_txt:
-                continue
+    reward_txt = await self.buscar_rewards(virus)
+    if not reward_txt:
+        continue
 
-            tabela = self.parse_rewards(reward_txt)
+    tabela = self.parse_rewards(reward_txt)
 
-            for _ in range(qtd):
-                dado = random.randint(1, 6)
-                recompensa = tabela.get(dado)
+    # ── MODO GARANTIDO ZENNY ─────────────────────────
+    if filtro and filtro.lower() == "zenny":
+        for recompensa in tabela.values():
+            if "zenny" in recompensa.lower():
+                valor = int(re.findall(r"\d+", recompensa)[0])
+                zenny_total += valor * qtd
+                break
+        continue
 
-                if not recompensa:
-                    continue
+    # ── MODO NORMAL (!r) ─────────────────────────────
+    for _ in range(qtd):
+        dado = random.randint(1, 6)
+        recompensa = tabela.get(dado)
 
-                if "zenny" in recompensa.lower():
-                    valor = int(re.findall(r"\d+", recompensa)[0])
-                    zenny_total += valor
-                else:
-                    resultados[recompensa] += 1
+        if not recompensa:
+            continue
+
+        if "zenny" in recompensa.lower():
+            valor = int(re.findall(r"\d+", recompensa)[0])
+            zenny_total += valor
+        else:
+            resultados[recompensa] += 1
+
 
         # -----------------------------------------------------
         # Saída
