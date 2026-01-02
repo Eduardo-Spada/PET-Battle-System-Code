@@ -16,24 +16,222 @@ class EncontroCommand(commands.Cog):
             "pub?gid=1726418026&single=true&output=csv"
         )
 
-    # -------------------------------------------------------------
-    # Função para limpar texto (remove acentos e normaliza)
-    # -------------------------------------------------------------
     def limpar_texto(self, t: str):
         t = t.lower().strip()
         t = unicodedata.normalize("NFD", t)
         t = "".join(c for c in t if unicodedata.category(c) != "Mn")
         return t
 
-    # -------------------------------------------------------------
-    # Buscar vírus da área
-    # -------------------------------------------------------------
     async def coletar_virus_da_area(self, area_nome):
         async with aiohttp.ClientSession() as session:
             async with session.get(self.url) as resp:
                 if resp.status != 200:
                     return None
                 csv_text = await resp.text()
+
+        linhas = csv_text.splitlines()
+        if "Area" not in linhas[0]:
+            linhas = linhas[1:]
+
+        reader = csv.DictReader(linhas)
+        reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
+
+        area_proc = self.limpar_texto(area_nome)
+        virus = []
+        virus_todas = []
+
+        for row in reader:
+            col_area = next((k for k in row if "area" in k.lower()), None)
+            col_nome = next((k for k in row if "name" in k.lower()), None)
+
+            if col_area and col_nome:
+                area = self.limpar_texto(row[col_area])
+                nome = row[col_nome].strip()
+                if area and nome:
+                    if area_proc == area or area_proc in area:
+                        virus.append(nome)
+                    if "todas as areas" in area:
+                        virus_todas.append(nome)
+
+        virus_final = virus + virus_todas
+        return virus_final if virus_final else None
+
+    @commands.command(name="encontro")
+    async def encontro(self, ctx, *, entrada: str = None):
+
+        if not entrada:
+            await ctx.send("❌ Use: `!encontro NomeDaArea`")
+            return
+
+        match = re.search(r"(players:\s*\d+|virus:\s*\d+)$", entrada, re.IGNORECASE)
+
+        if match:
+            opcional = match.group(1).replace(" ", "")
+            area = entrada[:match.start()].strip()
+        else:
+            opcional = ""
+            area = entrada.strip()
+
+        virus_area = await self.coletar_virus_da_area(area)
+        if not virus_area:
+            await ctx.send(f"❌ Nenhum vírus encontrado na área **{area}**.")
+            return
+
+        if opcional == "":
+            qtd = random.randint(1, 3)
+            contagem = Counter(random.choices(virus_area, k=qtd))
+
+            texto = f"🎲 Quantidade de Vírus: {qtd}\n\n🦠 Resultado:\n"
+            texto += "\n".join(
+                f"• {nome} ({q}x)" if q > 1 else f"• {nome}"
+                for nome, q in contagem.items()
+            )
+
+            await ctx.send(texto)
+            return
+
+        if opcional.lower().startswith("players:"):
+            players = int(opcional.split(":")[1])
+
+            total_contagem = Counter()
+            rolls = []
+
+            for i in range(1, players + 1):
+                qtd = random.randint(1, 3)
+                picks = random.choices(virus_area, k=qtd)
+                total_contagem.update(picks)
+                rolls.append(f"🎲 Jogador {i} → {qtd} vírus")
+
+            texto = "\n".join(rolls)
+            texto += "\n\n🦠 Resultado final:\n"
+            texto += "\n".join(
+                f"• {nome} ({q}x)" if q > 1 else f"• {nome}"
+                for nome, q in total_contagem.items()
+            )
+
+            await ctx.send(texto)
+            return
+
+        if opcional.lower().startswith("virus:"):
+            qtd = int(opcional.split(":")[1])
+            contagem = Counter(random.choices(virus_area, k=qtd))
+
+            texto = f"🎲 Quantidade definida: {qtd}\n\n🦠 Resultado:\n"
+            texto += "\n".join(
+                f"• {nome} ({q}x)" if q > 1 else f"• {nome}"
+                for nome, q in contagem.items()
+            )
+
+            await ctx.send(texto)
+            return
+
+
+# =============================================================
+# COMANDO !r / !rewards
+# =============================================================
+
+class RewardsCommand(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.url = (
+            "https://docs.google.com/spreadsheets/d/e/"
+            "2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/"
+            "pub?gid=1726418026&single=true&output=csv"
+        )
+
+    async def buscar_rewards(self, nome_virus):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.url) as resp:
+                if resp.status != 200:
+                    return None
+                csv_text = await resp.text()
+
+        reader = csv.DictReader(csv_text.splitlines())
+        for row in reader:
+            if row.get("Name", "").strip().lower() == nome_virus.lower():
+                return row.get("Rewards")
+        return None
+
+    def parse_rewards(self, reward_text):
+        tabela = {}
+        for p in reward_text.split(","):
+            faixa, recompensa = p.strip().split(":", 1)
+            nums = faixa.replace("R", "").split("-")
+            if len(nums) == 1:
+                tabela[int(nums[0])] = recompensa.strip()
+            else:
+                for i in range(int(nums[0]), int(nums[1]) + 1):
+                    tabela[i] = recompensa.strip()
+        return tabela
+
+    @commands.command(name="r", aliases=["rewards"])
+    async def rewards(self, ctx, filtro: str = None):
+
+        if not ctx.message.reference:
+            await ctx.send("❌ Responda a mensagem do **!encontro**.")
+            return
+
+        msg = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+        virus_lista = {}
+
+        for l in msg.content.splitlines():
+            if l.startswith("•"):
+                texto = l[1:].strip()
+                if "(" in texto:
+                    nome, qtd = texto.split("(")
+                    virus_lista[nome.strip()] = int(qtd.replace("x)", ""))
+                else:
+                    virus_lista[texto] = 1
+
+        resultados = Counter()
+        zenny_total = 0
+
+        for virus, qtd in virus_lista.items():
+            reward_txt = await self.buscar_rewards(virus)
+            if not reward_txt:
+                continue
+
+            tabela = self.parse_rewards(reward_txt)
+
+            # ── MODO GARANTIDO ZENNY ─────────────────────────
+            if filtro and filtro.lower() == "zenny":
+                for recompensa in tabela.values():
+                    if "zenny" in recompensa.lower():
+                        valor = int(re.findall(r"\d+", recompensa)[0])
+                        zenny_total += valor * qtd
+                        break
+                continue
+
+            # ── MODO NORMAL ─────────────────────────────────
+            for _ in range(qtd):
+                dado = random.randint(1, 6)
+                recompensa = tabela.get(dado)
+
+                if "zenny" in recompensa.lower():
+                    valor = int(re.findall(r"\d+", recompensa)[0])
+                    zenny_total += valor
+                else:
+                    resultados[recompensa] += 1
+
+        texto = "🎁 **Recompensas obtidas:**\n"
+
+        if filtro and filtro.lower() == "zenny":
+            texto += f"💰 **Zenny total:** {zenny_total}"
+            await ctx.send(texto)
+            return
+
+        for item, q in resultados.items():
+            texto += f"• {item} ({q}x)\n"
+
+        if zenny_total > 0:
+            texto += f"\n💰 **Zenny total:** {zenny_total}"
+
+        await ctx.send(texto)
+
+
+async def setup(bot):
+    await bot.add_cog(EncontroCommand(bot))
+    await bot.add_cog(RewardsCommand(bot))
 
         linhas = csv_text.splitlines()
         if "Area" not in linhas[0]:
