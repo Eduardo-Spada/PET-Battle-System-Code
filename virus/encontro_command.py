@@ -162,7 +162,141 @@ class EncontroCommand(commands.Cog):
             "`!encontro Área players:X`\n"
             "`!encontro Área virus:X`"
         )
+# =============================================================
+# COMANDO !r / !rewards — resolve recompensas do !encontro
+# =============================================================
+
+class RewardsCommand(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.url = (
+            "https://docs.google.com/spreadsheets/d/e/"
+            "2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/"
+            "pub?gid=1726418026&single=true&output=csv"
+        )
+
+    # ---------------------------------------------------------
+    # Busca Rewards de um vírus no CSV
+    # ---------------------------------------------------------
+    async def buscar_rewards(self, nome_virus):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.url) as resp:
+                if resp.status != 200:
+                    return None
+                csv_text = await resp.text()
+
+        linhas = csv_text.splitlines()
+        if "Name" not in linhas[0]:
+            linhas = linhas[1:]
+
+        reader = csv.DictReader(linhas)
+        reader.fieldnames = [h.strip().replace("\ufeff", "") for h in reader.fieldnames]
+
+        for row in reader:
+            if row.get("Name", "").strip().lower() == nome_virus.lower():
+                return row.get("Rewards", None)
+
+        return None
+
+    # ---------------------------------------------------------
+    # Converte "R1-2:Zenny, R3:Chip" em tabela de dado
+    # ---------------------------------------------------------
+    def parse_rewards(self, reward_text):
+        tabela = {}
+        partes = reward_text.split(",")
+
+        for p in partes:
+            p = p.strip()
+            if not p or ":" not in p:
+                continue
+
+            faixa, recompensa = p.split(":", 1)
+            recompensa = recompensa.strip()
+
+            nums = faixa.replace("R", "").split("-")
+            if len(nums) == 1:
+                tabela[int(nums[0])] = recompensa
+            else:
+                for i in range(int(nums[0]), int(nums[1]) + 1):
+                    tabela[i] = recompensa
+
+        return tabela
+
+    # ---------------------------------------------------------
+    # Comando !r / !rewards
+    # ---------------------------------------------------------
+    @commands.command(name="r", aliases=["rewards"])
+    async def rewards(self, ctx, filtro: str = None):
+
+        # Precisa responder a mensagem do !encontro
+        if not ctx.message.reference:
+            await ctx.send("❌ Responda a mensagem do **!encontro**.")
+            return
+
+        msg = await ctx.channel.fetch_message(
+            ctx.message.reference.message_id
+        )
+
+        linhas = msg.content.splitlines()
+        virus_lista = {}
+
+        # Extrai vírus e quantidades
+        for l in linhas:
+            if l.startswith("•"):
+                texto = l[1:].strip()
+                if "(" in texto:
+                    nome, qtd = texto.split("(")
+                    virus_lista[nome.strip()] = int(qtd.replace("x)", ""))
+                else:
+                    virus_lista[texto] = 1
+
+        if not virus_lista:
+            await ctx.send("❌ Nenhum vírus encontrado na mensagem.")
+            return
+
+        resultados = Counter()
+        zenny_total = 0
+
+        # Rola recompensas
+        for virus, qtd in virus_lista.items():
+            reward_txt = await self.buscar_rewards(virus)
+            if not reward_txt:
+                continue
+
+            tabela = self.parse_rewards(reward_txt)
+
+            for _ in range(qtd):
+                dado = random.randint(1, 6)
+                recompensa = tabela.get(dado)
+
+                if not recompensa:
+                    continue
+
+                if "zenny" in recompensa.lower():
+                    valor = int(re.findall(r"\d+", recompensa)[0])
+                    zenny_total += valor
+                else:
+                    resultados[recompensa] += 1
+
+        # -----------------------------------------------------
+        # Saída
+        # -----------------------------------------------------
+        texto = "🎁 **Recompensas obtidas:**\n"
+
+        if filtro and filtro.lower() == "zenny":
+            texto += f"💰 **Zenny total:** {zenny_total}"
+            await ctx.send(texto)
+            return
+
+        for item, q in resultados.items():
+            texto += f"• {item} ({q}x)\n"
+
+        if zenny_total > 0:
+            texto += f"\n💰 **Zenny total:** {zenny_total}"
+
+        await ctx.send(texto)
 
 
 async def setup(bot):
     await bot.add_cog(EncontroCommand(bot))
+    await bot.add_cog(RewardsCommand(bot))
