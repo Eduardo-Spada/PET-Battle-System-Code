@@ -38,7 +38,7 @@ class Mercado(commands.Cog):
             await ctx.send("❌ Erro ao buscar dados.")
             return
 
-        # ── CORREÇÃO CRÍTICA (igual ao !peça) ─────
+        # ── Correção do cabeçalho (igual ao !peça) ──
         linhas = data.splitlines()
         if "Nome" not in linhas[0]:
             linhas = linhas[1:]
@@ -81,9 +81,23 @@ class Mercado(commands.Cog):
             return
 
         # ── ROLLS ──────────────────────────────────
-        slot1 = random.choice(comuns + incomuns)
-        slot2 = random.choice(comuns + incomuns)
+        # Slot 1
+        if random.choice(["C", "U"]) == "C":
+            slot1 = random.choice(comuns)
+            raridade1 = "C"
+        else:
+            slot1 = random.choice(incomuns)
+            raridade1 = "U"
 
+        # Slot 2
+        if random.choice(["C", "U"]) == "C":
+            slot2 = random.choice(comuns)
+            raridade2 = "C"
+        else:
+            slot2 = random.choice(incomuns)
+            raridade2 = "U"
+
+        # Slot 3 (1d20 garantido R+)
         dado = random.randint(1, 20)
 
         if 1 <= dado <= 14:
@@ -99,8 +113,8 @@ class Mercado(commands.Cog):
         # ── Resultado ──────────────────────────────
         resposta = (
             "**📦 NaviCust Pack | Rare aberto!**\n\n"
-            f"🧩 **Slot 1:** {slot1} *(C/U)*\n"
-            f"🧩 **Slot 2:** {slot2} *(C/U)*\n"
+            f"🧩 **Slot 1:** {slot1} *({raridade1})*\n"
+            f"🧩 **Slot 2:** {slot2} *({raridade2})*\n"
             f"✨ **Slot 3:** {slot3} *(🎲 {dado} → {raridade3})*"
         )
 
