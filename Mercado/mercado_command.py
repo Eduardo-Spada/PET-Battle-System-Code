@@ -12,6 +12,7 @@ class Mercado(commands.Cog):
 
     @commands.command(name="mercado")
     async def mercado(self, ctx, *, opcao: str = None):
+        # ── Menu ──────────────────────────────────
         if not opcao:
             await ctx.send(
                 "**🛒 Mercado**\n"
@@ -33,31 +34,35 @@ class Mercado(commands.Cog):
                         return
                     data = await response.text()
         except Exception as e:
-            print(e)
+            print(f"Erro ao buscar CSV: {e}")
             await ctx.send("❌ Erro ao buscar dados.")
             return
 
+        # ── CORREÇÃO CRÍTICA (igual ao !peça) ─────
         linhas = data.splitlines()
-if "Nome" not in linhas[0]:
-    linhas = linhas[1:]
+        if "Nome" not in linhas[0]:
+            linhas = linhas[1:]
 
-reader = list(csv.DictReader(linhas))
+        reader = list(csv.DictReader(linhas))
 
-# Normaliza valores None
-for r in reader:
-    for k in r:
-        if r[k] is None:
-            r[k] = ""
-
+        # Normaliza valores None
+        for r in reader:
+            for k in r:
+                if r[k] is None:
+                    r[k] = ""
 
         # ── Separar por raridade ───────────────────
-        comuns, incomuns, raros, super_raros, ssr = [], [], [], [], []
+        comuns = []
+        incomuns = []
+        raros = []
+        super_raros = []
+        ssr = []
 
         for linha in reader:
             nome = linha.get("Nome", "").strip()
             raridade = linha.get("Rarity", "").strip()
 
-            if not nome:
+            if not nome or not raridade:
                 continue
 
             if raridade == "C":
