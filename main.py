@@ -72,6 +72,10 @@ async def setup_extensoes():
         if "virus.encontro_command" not in bot.extensions:
             await bot.load_extension("virus.encontro_command")
             print("🎲 Extensão virus.encontro_command carregada com sucesso!")
+            # Extensão MERCADO
+        if "Mercado.mercado_command" not in bot.extensions:
+    await bot.load_extension("Mercado.mercado_command")
+    print("🛒 Extensão Mercado carregada com sucesso!")
 
     except Exception as e:
         print(f"❌ Erro ao carregar extensões: {e}")
