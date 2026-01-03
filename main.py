@@ -91,6 +91,17 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
+    # Ignora menções se for uma resposta a mensagem do bot
+    if message.reference:
+        # Se a mensagem que está sendo respondida é do bot, não faz nada
+        try:
+            msg_ref = await message.channel.fetch_message(message.reference.message_id)
+            if msg_ref.author == bot.user:
+                await bot.process_commands(message)
+                return
+        except:
+            pass  # se der erro, ignora
+
     # Se alguém mencionar o bot @Salada Alpaca
     if bot.user in message.mentions:
         await message.channel.send(
@@ -98,6 +109,7 @@ async def on_message(message):
         )
 
     await bot.process_commands(message)
+
 # ──▲──────────────────────────────────────────────────────────────────
 
 
