@@ -21,6 +21,8 @@ COMANDOS = [
     "🎲 !encontro Área – Sorteia vírus de uma área + 'Todas as Áreas'.",
     "🎲 !encontro Área players:X – Sorteia vírus para X jogadores.",
     "🎲 !encontro Área virus:X – Sorteia quantidade definida de vírus.",
+    "🎁 !r - marque a mensagem do !encontro, e então utilize esse comando! você obterá as Recompensas de todos os vírus!",
+    "💰 !r zenny - A mesma coisa que !r, muda que aqui tu só ganha os zennys! utilize somente caso você possua o programa millionaire, viu?",
 ]
 
 # Quantos itens por página
