@@ -19,12 +19,18 @@ class EncontroCommand(commands.Cog):
             "pub?gid=1726418026&single=true&output=csv"
         )
 
+    # -------------------------------------------------------------
+    # Função para limpar texto (remove acentos e normaliza)
+    # -------------------------------------------------------------
     def limpar_texto(self, t: str):
         t = t.lower().strip()
         t = unicodedata.normalize("NFD", t)
         t = "".join(c for c in t if unicodedata.category(c) != "Mn")
         return t
 
+    # -------------------------------------------------------------
+    # Buscar vírus da área
+    # -------------------------------------------------------------
     async def coletar_virus_da_area(self, area_nome):
         async with aiohttp.ClientSession() as session:
             async with session.get(self.url) as resp:
@@ -59,6 +65,9 @@ class EncontroCommand(commands.Cog):
         virus_final = virus + virus_todas
         return virus_final if virus_final else None
 
+    # -------------------------------------------------------------
+    # Comando !encontro
+    # -------------------------------------------------------------
     @commands.command(name="encontro")
     async def encontro(self, ctx, *, entrada: str = None):
 
@@ -80,6 +89,9 @@ class EncontroCommand(commands.Cog):
             await ctx.send(f"❌ Nenhum vírus encontrado na área **{area}**.")
             return
 
+        # ---------------------------------------------------------
+        # Caso 1 — sem parâmetro
+        # ---------------------------------------------------------
         if opcional == "":
             qtd = random.randint(1, 3)
             contagem = Counter(random.choices(virus_area, k=qtd))
@@ -93,6 +105,9 @@ class EncontroCommand(commands.Cog):
             await ctx.send(texto)
             return
 
+        # ---------------------------------------------------------
+        # Caso 2 — players:X
+        # ---------------------------------------------------------
         if opcional.lower().startswith("players:"):
             try:
                 players = int(opcional.split(":")[1])
@@ -121,6 +136,9 @@ class EncontroCommand(commands.Cog):
             await ctx.send(texto)
             return
 
+        # ---------------------------------------------------------
+        # Caso 3 — virus:X  (SUPORTA 1 MILHÃO)
+        # ---------------------------------------------------------
         if opcional.lower().startswith("virus:"):
             try:
                 qtd = int(opcional.split(":")[1])
@@ -150,7 +168,7 @@ class EncontroCommand(commands.Cog):
 
 
 # =============================================================
-# COMANDO !r / !rewards
+# COMANDO !r / !rewards — resolve recompensas do !encontro
 # =============================================================
 class RewardsCommand(commands.Cog):
     def __init__(self, bot):
@@ -161,6 +179,9 @@ class RewardsCommand(commands.Cog):
             "pub?gid=1726418026&single=true&output=csv"
         )
 
+    # ---------------------------------------------------------
+    # Busca Rewards de um vírus no CSV
+    # ---------------------------------------------------------
     async def buscar_rewards(self, nome_virus):
         async with aiohttp.ClientSession() as session:
             async with session.get(self.url) as resp:
@@ -181,13 +202,16 @@ class RewardsCommand(commands.Cog):
 
         return None
 
+    # ---------------------------------------------------------
+    # Converte "R1-2:Zenny, R3:Chip" em tabela de dado
+    # ---------------------------------------------------------
     def parse_rewards(self, reward_text):
         tabela = {}
         partes = reward_text.split(",")
 
         for p in partes:
             p = p.strip()
-            if ":" not in p:
+            if not p or ":" not in p:
                 continue
 
             faixa, recompensa = p.split(":", 1)
@@ -202,18 +226,25 @@ class RewardsCommand(commands.Cog):
 
         return tabela
 
+    # ---------------------------------------------------------
+    # Comando !r / !rewards
+    # ---------------------------------------------------------
     @commands.command(name="r", aliases=["rewards"])
     async def rewards(self, ctx, filtro: str = None):
 
+        # Precisa responder a mensagem do !encontro
         if not ctx.message.reference:
             await ctx.send("❌ Responda a mensagem do **!encontro**.")
             return
 
-        msg = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+        msg = await ctx.channel.fetch_message(
+            ctx.message.reference.message_id
+        )
 
         linhas = msg.content.splitlines()
         virus_lista = {}
 
+        # Extrai vírus e quantidades
         for l in linhas:
             if l.startswith("•"):
                 texto = l[1:].strip()
@@ -223,9 +254,14 @@ class RewardsCommand(commands.Cog):
                 else:
                     virus_lista[texto] = 1
 
+        if not virus_lista:
+            await ctx.send("❌ Nenhum vírus encontrado na mensagem.")
+            return
+
         resultados = Counter()
         zenny_total = 0
 
+        # Rola recompensas
         for virus, qtd in virus_lista.items():
             reward_txt = await self.buscar_rewards(virus)
             if not reward_txt:
@@ -233,36 +269,50 @@ class RewardsCommand(commands.Cog):
 
             tabela = self.parse_rewards(reward_txt)
 
-            # -------- !r zenny → GARANTE ZENNY --------
-            if filtro and filtro.lower() == "zenny":
-                for r in tabela.values():
-                    if "zenny" in r.lower():
-                        valor = int(re.findall(r"\d+", r)[0])
-                        zenny_total += valor * qtd
-                continue
-
-            # -------- !r normal --------
             for _ in range(qtd):
                 dado = random.randint(1, 6)
                 recompensa = tabela.get(dado)
+
                 if not recompensa:
                     continue
 
-                if "zenny" in recompensa.lower():
-                    valor = int(re.findall(r"\d+", recompensa)[0])
-                    zenny_total += valor
+                # -------------------------------------------------
+                # Se a pessoa usar !r zenny, garante apenas Zenny do dado
+                # -------------------------------------------------
+                if filtro and filtro.lower() == "zenny":
+                    if "zenny" in recompensa.lower():
+                        valor = int(re.findall(r"\d+", recompensa)[0])
+                        zenny_total += valor
                 else:
-                    resultados[recompensa] += 1
+                    # Adiciona itens ou Zenny normalmente
+                    if "zenny" in recompensa.lower():
+                        valor = int(re.findall(r"\d+", recompensa)[0])
+                        zenny_total += valor
+                    else:
+                        resultados[recompensa] += 1
 
+        # -----------------------------------------------------
+        # Saída
+        # -----------------------------------------------------
         texto = "🎁 **Recompensas obtidas:**\n"
+
+        if filtro and filtro.lower() == "zenny":
+            texto += f"💰 **Zenny total:** {zenny_total}"
+            await ctx.send(texto)
+            return
 
         for item, q in resultados.items():
             texto += f"• {item} ({q}x)\n"
 
-        texto += f"\n💰 **Zenny total:** {zenny_total}"
+        if zenny_total > 0:
+            texto += f"\n💰 **Zenny total:** {zenny_total}"
+
         await ctx.send(texto)
 
 
+# ---------------------------------------------------------
+# Setup
+# ---------------------------------------------------------
 async def setup(bot):
     await bot.add_cog(EncontroCommand(bot))
     await bot.add_cog(RewardsCommand(bot))
