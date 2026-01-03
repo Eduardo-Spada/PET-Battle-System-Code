@@ -181,8 +181,9 @@ class RewardsCommand(commands.Cog):
 
         return None
 
+    # ---------- CORRIGIDO: mantém faixas como tuplas (min, max, recompensa) ----------
     def parse_rewards(self, reward_text):
-        tabela = {}
+        tabela = []
         partes = reward_text.split(",")
 
         for p in partes:
@@ -195,10 +196,9 @@ class RewardsCommand(commands.Cog):
 
             nums = faixa.replace("R", "").split("-")
             if len(nums) == 1:
-                tabela[int(nums[0])] = recompensa
+                tabela.append((int(nums[0]), int(nums[0]), recompensa))
             else:
-                for i in range(int(nums[0]), int(nums[1]) + 1):
-                    tabela[i] = recompensa
+                tabela.append((int(nums[0]), int(nums[1]), recompensa))
 
         return tabela
 
@@ -233,18 +233,34 @@ class RewardsCommand(commands.Cog):
 
             tabela = self.parse_rewards(reward_txt)
 
-            # -------- !r zenny → GARANTE ZENNY --------
+            # -------- !r zenny → GARANTE ZENNY (uma vez por vírus, mesmo com faixa) --------
             if filtro and filtro.lower() == "zenny":
-                for r in tabela.values():
-                    if "zenny" in r.lower():
-                        valor = int(re.findall(r"\d+", r)[0])
-                        zenny_total += valor * qtd
+                for _ in range(qtd):
+                    zenny_assigned = False
+                    dado = random.randint(1, 6)
+                    for min_r, max_r, r in tabela:
+                        if min_r <= dado <= max_r and "zenny" in r.lower():
+                            valor = int(re.findall(r"\d+", r)[0])
+                            zenny_total += valor
+                            zenny_assigned = True
+                            break
+                    if not zenny_assigned:
+                        # caso não tenha caído zenny na faixa sorteada, pega a primeira zenny disponível
+                        for _, _, r in tabela:
+                            if "zenny" in r.lower():
+                                valor = int(re.findall(r"\d+", r)[0])
+                                zenny_total += valor
+                                break
                 continue
 
             # -------- !r normal --------
             for _ in range(qtd):
                 dado = random.randint(1, 6)
-                recompensa = tabela.get(dado)
+                recompensa = None
+                for min_r, max_r, r in tabela:
+                    if min_r <= dado <= max_r:
+                        recompensa = r
+                        break
                 if not recompensa:
                     continue
 
