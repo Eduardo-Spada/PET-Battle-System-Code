@@ -37,7 +37,18 @@ class Mercado(commands.Cog):
             await ctx.send("❌ Erro ao buscar dados.")
             return
 
-        reader = list(csv.DictReader(data.splitlines()))
+        linhas = data.splitlines()
+if "Nome" not in linhas[0]:
+    linhas = linhas[1:]
+
+reader = list(csv.DictReader(linhas))
+
+# Normaliza valores None
+for r in reader:
+    for k in r:
+        if r[k] is None:
+            r[k] = ""
+
 
         # ── Separar por raridade ───────────────────
         comuns, incomuns, raros, super_raros, ssr = [], [], [], [], []
