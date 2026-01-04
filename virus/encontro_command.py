@@ -181,36 +181,29 @@ class RewardsCommand(commands.Cog):
 
         return None
 
-    # ---------- CORRIGIDO: mantém faixas como tuplas (min, max, recompensa) ----------
+    # ---------- CORRIGIDO: parse robusto com regex ----------
     def parse_rewards(self, reward_text):
         tabela = []
         partes = reward_text.split(",")
 
         for p in partes:
             p = p.strip()
-            if ":" not in p:
-                continue
-
-            faixa, recompensa = p.split(":", 1)
-            recompensa = recompensa.strip()
-
-            nums = faixa.replace("R", "").split("-")
-            if len(nums) == 1:
-                tabela.append((int(nums[0]), int(nums[0]), recompensa))
-            else:
-                tabela.append((int(nums[0]), int(nums[1]), recompensa))
-
+            # Regex para capturar R1-2: Recompensa, R6: Recompensa, etc.
+            match = re.match(r"R(\d+)(?:-(\d+))?\s*:\s*(.+)", p)
+            if match:
+                min_r = int(match.group(1))
+                max_r = int(match.group(2)) if match.group(2) else min_r
+                recompensa = match.group(3).strip()
+                tabela.append((min_r, max_r, recompensa))
         return tabela
 
     @commands.command(name="r", aliases=["rewards"])
     async def rewards(self, ctx, filtro: str = None):
-
         if not ctx.message.reference:
             await ctx.send("❌ Responda a mensagem do **!encontro**.")
             return
 
         msg = await ctx.channel.fetch_message(ctx.message.reference.message_id)
-
         linhas = msg.content.splitlines()
         virus_lista = {}
 
@@ -233,7 +226,7 @@ class RewardsCommand(commands.Cog):
 
             tabela = self.parse_rewards(reward_txt)
 
-            # -------- !r zenny → GARANTE ZENNY (uma vez por vírus, mesmo com faixa) --------
+            # -------- !r zenny → GARANTE ZENNY --------
             if filtro and filtro.lower() == "zenny":
                 for _ in range(qtd):
                     zenny_assigned = False
@@ -245,7 +238,6 @@ class RewardsCommand(commands.Cog):
                             zenny_assigned = True
                             break
                     if not zenny_assigned:
-                        # caso não tenha caído zenny na faixa sorteada, pega a primeira zenny disponível
                         for _, _, r in tabela:
                             if "zenny" in r.lower():
                                 valor = int(re.findall(r"\d+", r)[0])
@@ -271,7 +263,6 @@ class RewardsCommand(commands.Cog):
                     resultados[recompensa] += 1
 
         texto = "🎁 **Recompensas obtidas:**\n"
-
         for item, q in resultados.items():
             texto += f"• {item} ({q}x)\n"
 
