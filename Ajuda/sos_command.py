@@ -15,7 +15,7 @@ COMANDOS = [
     "⚔️ !rodada – Registra ação.",
     "⚔️ !passar – Passa turno.",
     "⚔️ !encerrar – Encerra batalha.",
-    "📊 !status – Mostra status.",
+    "📊 !status – Mostra status da batalha.",
     "📘 !doc – Abre documento informativo.",
     "🤖 !oi – Teste do bot.",
     "🎲 !encontro Área – Sorteia vírus de uma área + 'Todas as Áreas'.",
@@ -23,6 +23,9 @@ COMANDOS = [
     "🎲 !encontro Área virus:X – Sorteia quantidade definida de vírus.",
     "🎁 !r - marque a mensagem do !encontro, e então utilize esse comando! você obterá as Recompensas de todos os vírus!",
     "💰 !r zenny - A mesma coisa que !r, muda que aqui tu só ganha os zennys! utilize somente caso você possua o programa millionaire, viu?",
+    "🛒 !mercado – Mostra os itens disponíveis no mercado.",
+    "🛒 !mercado [item] (quantia) – Compra um item do mercado. Ex: `!mercado NaviCust Pack | Rare 10`",
+
 ]
 
 # Quantos itens por página
