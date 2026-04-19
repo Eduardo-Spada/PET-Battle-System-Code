@@ -23,7 +23,6 @@ PACKS = {
     }
 }
 
-# 🔥 BANIDOS POR PACK
 BANNED_PARTS = {
     "navicust pack | rare": {"TrueLove"},
     "battlechip pack": {"FolderBack"}
@@ -100,7 +99,6 @@ class Mercado(commands.Cog):
             if not nome or not raridade:
                 continue
 
-            # 🔥 BAN POR PACK
             if nome in BANNED_PARTS.get(nome_pack, set()):
                 continue
 
@@ -125,12 +123,20 @@ class Mercado(commands.Cog):
         for i in range(1, quantidade + 1):
 
             # Slot 1
-            slot1 = random.choice(comuns if random.random() < 0.5 else incomuns)
-            rar1 = "C/U"
+            if random.random() < 0.5:
+                slot1 = random.choice(comuns)
+                rar1 = "C"
+            else:
+                slot1 = random.choice(incomuns)
+                rar1 = "U"
 
             # Slot 2
-            slot2 = random.choice(comuns if random.random() < 0.5 else incomuns)
-            rar2 = "C/U"
+            if random.random() < 0.5:
+                slot2 = random.choice(comuns)
+                rar2 = "C"
+            else:
+                slot2 = random.choice(incomuns)
+                rar2 = "U"
 
             # Slot 3
             dado = random.randint(1, 20)
