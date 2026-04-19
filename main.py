@@ -67,12 +67,12 @@ async def setup_extensoes():
         if "Mercado.mercado_command" not in bot.extensions:
             await bot.load_extension("Mercado.mercado_command")
 
-        # ───────── 🔄 TRADER (COM DEBUG) ─────────
+        # ───────── 🔄 TRADER TEST ─────────
         try:
-            await bot.load_extension("Mercado.trader")
-            print("🔄 Trader carregado com sucesso!")
+            await bot.load_extension("Teste.trader_test")
+            print("🔄 Trader TEST carregado com sucesso!")
         except Exception as e:
-            print("❌ ERRO AO CARREGAR TRADER:")
+            print("❌ ERRO AO CARREGAR TRADER TEST:")
             print(e)
 
         print("✅ Todas as extensões carregadas!")
@@ -91,7 +91,6 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # evita conflito com replies
     if message.reference:
         try:
             msg_ref = await message.channel.fetch_message(message.reference.message_id)
@@ -101,7 +100,6 @@ async def on_message(message):
         except:
             pass
 
-    # menção ao bot
     if bot.user in message.mentions:
         await message.channel.send(
             f"👋 Oi {message.author.mention}! Se precisar de ajuda, use **!sos**."
