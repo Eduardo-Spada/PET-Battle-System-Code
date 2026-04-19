@@ -67,10 +67,13 @@ async def setup_extensoes():
         if "Mercado.mercado_command" not in bot.extensions:
             await bot.load_extension("Mercado.mercado_command")
 
-        # ───────── 🔄 TRADER (NOVO) ─────────
-        if "Mercado.trader" not in bot.extensions:
+        # ───────── 🔄 TRADER (COM DEBUG) ─────────
+        try:
             await bot.load_extension("Mercado.trader")
             print("🔄 Trader carregado com sucesso!")
+        except Exception as e:
+            print("❌ ERRO AO CARREGAR TRADER:")
+            print(e)
 
         print("✅ Todas as extensões carregadas!")
 
