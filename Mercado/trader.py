@@ -1,1 +1,167 @@
+import discord
+import csv
+import aiohttp
+import random
+import re
+import difflib
+from collections import Counter
+from discord.ext import commands
 
+PACKS = {
+    "navicust pack | rare": {
+        "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/pub?gid=0&single=true&output=csv",
+        "tipo": "program"
+    },
+    "battlechip pack": {
+        "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/pub?gid=1394317870&single=true&output=csv",
+        "tipo": "chip"
+    }
+}
+
+BANNED_PARTS = {
+    "navicust pack | rare": {"TrueLove"},
+    "battlechip pack": {"FolderBack"}
+}
+
+RARITY_ORDER = ["C", "U", "R", "SR", "SSR"]
+
+class Trader(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    async def carregar_dados(self):
+        dados = []
+
+        async with aiohttp.ClientSession() as session:
+            for nome_pack, info in PACKS.items():
+                async with session.get(info["url"]) as resp:
+                    if resp.status != 200:
+                        continue
+                    text = await resp.text()
+
+                reader = csv.DictReader(text.splitlines())
+
+                for row in reader:
+                    nome = row.get("Nome", "").strip()
+                    raridade = row.get("Rarity", "").strip()
+
+                    if not nome or not raridade:
+                        continue
+
+                    if nome in BANNED_PARTS.get(nome_pack, set()):
+                        continue
+
+                    dados.append({
+                        "nome": nome,
+                        "raridade": raridade,
+                        "tipo": info["tipo"]
+                    })
+
+        return dados
+
+    # =========================
+    # !TRADER
+    # =========================
+    @commands.command(name="trader")
+    async def trader(self, ctx):
+
+        embed = discord.Embed(
+            title="🔄 Battler Trader",
+            description=(
+                "Bem-vindo ao **Battler Trader**!\n\n"
+                "Você sacrifica itens e recebe um novo aleatório.\n\n"
+                "**📜 Regras:**\n"
+                "• 5 itens → 1 resultado\n"
+                "• Tipo depende da maioria\n"
+                "• Raridade depende da maioria\n"
+                "• Empate → raridade mais alta\n"
+                "• Itens NÃO voltam\n\n"
+                "**⚙️ Uso:**\n"
+                "`!inserir`\n"
+                "Cannon (2x)\n"
+                "Sword"
+            ),
+            color=discord.Color.blue()
+        )
+
+        embed.set_image(
+            url="https://cdn.discordapp.com/attachments/1432893983046242346/1495525077691924561/TEPPEN_3ME_081_art.webp"
+        )
+
+        await ctx.send(embed=embed)
+
+    # =========================
+    # !INSERIR
+    # =========================
+    @commands.command(name="inserir")
+    async def inserir(self, ctx):
+
+        linhas = ctx.message.content.split("\n")[1:]
+
+        if not linhas:
+            await ctx.send("❌ Insira itens abaixo do comando.")
+            return
+
+        itens = []
+
+        for linha in linhas:
+            match = re.match(r"(.+?)\s*\((\d+)x\)", linha)
+
+            if match:
+                itens += [match.group(1).strip()] * int(match.group(2))
+            else:
+                itens.append(linha.strip())
+
+        if len(itens) < 5:
+            await ctx.send("❌ Mínimo de 5 itens.")
+            return
+
+        dados = await self.carregar_dados()
+        mapa = {d["nome"].lower(): d for d in dados}
+        nomes = list(mapa.keys())
+
+        encontrados = []
+
+        for nome in itens:
+            n = nome.lower()
+
+            if n in mapa:
+                encontrados.append(mapa[n])
+            else:
+                sugestao = difflib.get_close_matches(n, nomes, 1)
+
+                await ctx.send(
+                    f"❌ Item não encontrado: **{nome}**"
+                    + (f"\n👉 Você quis dizer: **{sugestao[0]}**?" if sugestao else "")
+                )
+                return
+
+        grupos = [encontrados[i:i+5] for i in range(0, len(encontrados), 5)]
+
+        resultados = []
+        for g in grupos:
+            if len(g) < 5:
+                continue
+            resultados.append(self.processar(g, dados))
+
+        await ctx.send("**🎰 Resultado do Trader:**\n" + "\n".join(resultados))
+
+    def processar(self, grupo, dados):
+
+        usados = {d["nome"].lower() for d in grupo}
+
+        tipo = Counter(d["tipo"] for d in grupo).most_common(1)[0][0]
+        rar = Counter(d["raridade"] for d in grupo).most_common(1)[0][0]
+
+        pool = [
+            d["nome"] for d in dados
+            if d["tipo"] == tipo
+            and d["raridade"] == rar
+            and d["nome"].lower() not in usados
+        ]
+
+        return random.choice(pool) if pool else "❌ Nada encontrado"
+
+
+async def setup(bot):
+    await bot.add_cog(Trader(bot))
