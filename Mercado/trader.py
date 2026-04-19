@@ -37,31 +37,29 @@ class Trader(commands.Cog):
                 async with session.get(info["url"]) as resp:
                     if resp.status != 200:
                         continue
+
                     text = await resp.text()
 
-                reader = csv.DictReader(text.splitlines())
+                    reader = csv.DictReader(text.splitlines())
 
-                for row in reader:
-                    nome = row.get("Nome", "").strip()
-                    raridade = row.get("Rarity", "").strip()
+                    for row in reader:
+                        nome = row.get("Nome", "").strip()
+                        raridade = row.get("Rarity", "").strip()
 
-                    if not nome or not raridade:
-                        continue
+                        if not nome or not raridade:
+                            continue
 
-                    if nome in BANNED_PARTS.get(nome_pack, set()):
-                        continue
+                        if nome in BANNED_PARTS.get(nome_pack, set()):
+                            continue
 
-                    dados.append({
-                        "nome": nome,
-                        "raridade": raridade,
-                        "tipo": info["tipo"]
-                    })
+                        dados.append({
+                            "nome": nome,
+                            "raridade": raridade,
+                            "tipo": info["tipo"]
+                        })
 
         return dados
 
-    # =========================
-    # !TRADER
-    # =========================
     @commands.command(name="trader")
     async def trader(self, ctx):
 
@@ -90,9 +88,6 @@ class Trader(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    # =========================
-    # !INSERIR
-    # =========================
     @commands.command(name="inserir")
     async def inserir(self, ctx):
 
