@@ -11,7 +11,7 @@ manter_vivo()
 intents = discord.Intents.default()
 intents.message_content = True
 
-# Inicializa o bot (help removido, case-insensitive para aceitar !Sos etc)
+# Bot
 bot = commands.Bot(
     command_prefix="!",
     intents=intents,
@@ -22,93 +22,83 @@ bot = commands.Bot(
 # ──▼ Carregar extensões ───────────────────────────────────────────────
 async def setup_extensoes():
     try:
-        # Extensões de Vírus
+
+        # ───────── VIRUS ─────────
         if "virus.virus_command" not in bot.extensions:
             await bot.load_extension("virus.virus_command")
-            print("🦠 Extensão virus.virus_command carregada com sucesso!")
 
         if "virus.viruslist" not in bot.extensions:
             await bot.load_extension("virus.viruslist")
-            print("📜 Extensão virus.viruslist carregada com sucesso!")
 
         if "virus.local_command" not in bot.extensions:
             await bot.load_extension("virus.local_command")
-            print("📍 Extensão virus.local_command carregada com sucesso!")
 
-        # Extensões de Chips
+        # ───────── CHIPS ─────────
         if "Chip.chip_command" not in bot.extensions:
             await bot.load_extension("Chip.chip_command")
-            print("💾 Extensão Chip.chip_command carregada com sucesso!")
 
         if "Chip.chips_list" not in bot.extensions:
             await bot.load_extension("Chip.chips_list")
-            print("📜 Extensão Chip.chips_list carregada com sucesso!")
 
-        # Extensões de Peças / Navi
+        # ───────── NAVI ─────────
         if "Navi.Pecas" not in bot.extensions:
             await bot.load_extension("Navi.Pecas")
-            print("🧩 Extensão Navi.Pecas carregada com sucesso!")
 
         if "Navi.pecaslist" not in bot.extensions:
             await bot.load_extension("Navi.pecaslist")
-            print("📜 Extensão Navi.pecaslist carregada com sucesso!")
 
-        # Extensão de Batalha
+        # ───────── BATALHA ─────────
         if "batalha.batalha" not in bot.extensions:
             await bot.load_extension("batalha.batalha")
-            print("⚔️ Extensão batalha.batalha carregada com sucesso!")
 
-        # Extensão DOC
+        # ───────── LINKS ─────────
         if "Links.doc_command" not in bot.extensions:
             await bot.load_extension("Links.doc_command")
-            print("📘 Extensão Links.doc_command carregada com sucesso!")
 
-        # Extensão SOS (Ajuda)
+        # ───────── AJUDA ─────────
         if "Ajuda.sos_command" not in bot.extensions:
             await bot.load_extension("Ajuda.sos_command")
-            print("🆘 Extensão Ajuda.sos_command carregada com sucesso!")
 
-                # Extensão ENCONTRO (Nova)
+        # ───────── ENCONTRO ─────────
         if "virus.encontro_command" not in bot.extensions:
             await bot.load_extension("virus.encontro_command")
-            print("🎲 Extensão virus.encontro_command carregada com sucesso!")
 
-        # Extensão MERCADO
+        # ───────── MERCADO ─────────
         if "Mercado.mercado_command" not in bot.extensions:
             await bot.load_extension("Mercado.mercado_command")
-            print("🛒 Extensão Mercado carregada com sucesso!")
 
+        # ───────── 🔄 TRADER (NOVO) ─────────
+        if "Mercado.trader" not in bot.extensions:
+            await bot.load_extension("Mercado.trader")
+            print("🔄 Trader carregado com sucesso!")
+
+        print("✅ Todas as extensões carregadas!")
 
     except Exception as e:
         print(f"❌ Erro ao carregar extensões: {e}")
-# ──▲──────────────────────────────────────────────────────────────────
 
-
-# ──▼ Evento on_ready ---------------------------------------------------
+# ──▼ Bot online ───────────────────────────────────────────────────────
 @bot.event
 async def on_ready():
     print(f"✅ Bot está online como {bot.user}")
-# ──▲──────────────────────────────────────────────────────────────────
 
-
-# ──▼ Responder quando mencionarem o bot --------------------------------
+# ──▼ Mensagens / menções ──────────────────────────────────────────────
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Ignora menções se for uma resposta a mensagem do bot
+    # evita conflito com replies
     if message.reference:
-        # Se a mensagem que está sendo respondida é do bot, não faz nada
         try:
             msg_ref = await message.channel.fetch_message(message.reference.message_id)
             if msg_ref.author == bot.user:
                 await bot.process_commands(message)
                 return
         except:
-            pass  # se der erro, ignora
+            pass
 
-    # Se alguém mencionar o bot @Salada Alpaca
+    # menção ao bot
     if bot.user in message.mentions:
         await message.channel.send(
             f"👋 Oi {message.author.mention}! Se precisar de ajuda, use **!sos**."
@@ -116,17 +106,12 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# ──▲──────────────────────────────────────────────────────────────────
-
-
-# ──▼ Comando simples ----------------------------------------------------
+# ──▼ comando teste ────────────────────────────────────────────────────
 @bot.command()
 async def oi(ctx):
     await ctx.send(f"Fala {ctx.author.mention}! Eu tô vivo aqui no servidor!")
-# ──▲──────────────────────────────────────────────────────────────────
 
-
-# ──▼ Executar o bot -----------------------------------------------------
+# ──▼ start ────────────────────────────────────────────────────────────
 async def main():
     async with bot:
         await setup_extensoes()
@@ -139,4 +124,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-# ──▲──────────────────────────────────────────────────────────────────
