@@ -7,14 +7,18 @@ import difflib
 from collections import Counter
 from discord.ext import commands
 
+MAX_PACKS = 20
+
 PACKS = {
     "navicust pack | rare": {
         "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/pub?gid=0&single=true&output=csv",
-        "tipo": "program"
+        "tipo": "program",
+        "emoji": "🧩"
     },
     "battlechip pack": {
         "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZqlGcNj6u_1zxCt19WvIGYnJ5kxIsyJ9LHscjgSnnKKI5O-7j1en3Ha89PYjFa19zLKErIQMoUrd8/pub?gid=1394317870&single=true&output=csv",
-        "tipo": "chip"
+        "tipo": "chip",
+        "emoji": "💾"
     }
 }
 
@@ -30,179 +34,194 @@ class Sistema(commands.Cog):
         self.bot = bot
 
     # =========================
-    # CARREGAR DADOS
+    # MERCADO (VOLTOU 😈)
     # =========================
-    async def carregar_dados(self):
-        dados = []
+    @commands.command(name="mercado")
+    async def mercado(self, ctx, *, opcao: str = None):
+
+        if not opcao:
+            await ctx.send(
+                "**🛒 Mercado**\n"
+                "Opções disponíveis:\n\n"
+                "• `NaviCust Pack | Rare`\n"
+                "• `BattleChip Pack`\n"
+            )
+            return
+
+        partes = opcao.rsplit(" ", 1)
+        nome_pack = partes[0].lower().strip()
+        quantidade = 1
+
+        if len(partes) == 2 and partes[1].isdigit():
+            quantidade = int(partes[1])
+
+        if nome_pack not in PACKS:
+            await ctx.send("❌ Pack inválido.")
+            return
+
+        if quantidade < 1 or quantidade > MAX_PACKS:
+            await ctx.send(f"❌ Entre 1 e {MAX_PACKS}.")
+            return
+
+        pack = PACKS[nome_pack]
 
         async with aiohttp.ClientSession() as session:
-            for nome_pack, info in PACKS.items():
-                async with session.get(info["url"]) as resp:
-                    if resp.status != 200:
-                        continue
-                    text = await resp.text()
+            async with session.get(pack["url"]) as resp:
+                data = await resp.text()
 
-                linhas = text.splitlines()
-                reader = csv.DictReader(linhas)
+        linhas = data.splitlines()
+        reader = list(csv.DictReader(linhas))
 
-                for row in reader:
-                    nome = row.get("Nome", "").strip()
-                    raridade = row.get("Rarity", "").strip()
+        comuns, incomuns, raros, sr, ssr = [], [], [], [], []
 
-                    if not nome or not raridade:
-                        continue
+        for linha in reader:
+            nome = linha.get("Nome", "").strip()
+            raridade = linha.get("Rarity", "").strip()
 
-                    if nome in BANNED_PARTS.get(nome_pack, set()):
-                        continue
+            if not nome or not raridade:
+                continue
 
-                    dados.append({
-                        "nome": nome,
-                        "raridade": raridade,
-                        "tipo": info["tipo"]
-                    })
+            if nome in BANNED_PARTS.get(nome_pack, set()):
+                continue
 
-        return dados
+            if raridade == "C":
+                comuns.append(nome)
+            elif raridade == "U":
+                incomuns.append(nome)
+            elif raridade == "R":
+                raros.append(nome)
+            elif raridade == "SR":
+                sr.append(nome)
+            elif raridade == "SSR":
+                ssr.append(nome)
+
+        msg = f"**📦 {quantidade}x {nome_pack.title()}**\n\n"
+
+        for i in range(quantidade):
+            # Slot 1
+            if random.random() < 0.5:
+                s1 = random.choice(comuns)
+                r1 = "C"
+            else:
+                s1 = random.choice(incomuns)
+                r1 = "U"
+
+            # Slot 2
+            if random.random() < 0.5:
+                s2 = random.choice(comuns)
+                r2 = "C"
+            else:
+                s2 = random.choice(incomuns)
+                r2 = "U"
+
+            # Slot 3
+            dado = random.randint(1, 20)
+            if dado <= 14:
+                s3 = random.choice(raros)
+                r3 = "R"
+            elif dado <= 19:
+                s3 = random.choice(sr)
+                r3 = "SR"
+            else:
+                s3 = random.choice(ssr)
+                r3 = "SSR"
+
+            msg += (
+                f"**Pack {i+1}:**\n"
+                f"{pack['emoji']} {s1} ({r1})\n"
+                f"{pack['emoji']} {s2} ({r2})\n"
+                f"✨ {s3} (🎲 {dado} → {r3})\n\n"
+            )
+
+        await ctx.send(msg)
 
     # =========================
-    # COMANDO TRADER (COM IMAGEM)
+    # TRADER (COM IMAGEM)
     # =========================
     @commands.command(name="trader")
     async def trader(self, ctx):
 
         embed = discord.Embed(
             title="🔄 Battler Trader",
-            description=(
-                "Hm? Tem algo novo na loja...\n"
-                "Um **Battler Trader**!\n\n"
-                "Você entrega itens e recebe um novo!\n\n"
-                "**📜 Regras:**\n"
-                "• 5 itens → 1 resultado\n"
-                "• Tipo depende da maioria (Chip ou Programa)\n"
-                "• Raridade depende da maioria\n"
-                "• Empate → raridade mais alta\n"
-                "• Itens usados NÃO voltam\n\n"
-                "**⚙️ Uso:**\n"
-                "`!inserir`\n"
-                "Cannon (2x)\n"
-                "Sword\n"
-            ),
+            description="Use `!inserir` para trocar itens!",
             color=discord.Color.blue()
         )
 
-        # 🔥 COLOCA SUA IMAGEM AQUI
-        embed.set_image(url="https://cdn.discordapp.com/attachments/1432893983046242346/1495525077691924561/TEPPEN_3ME_081_art.webp?ex=69e68fc4&is=69e53e44&hm=8c09d8766c398b177a5e8d72041f9f860ba310eaeb8bbc0995cd8f8a4859a8f3&")
+        embed.set_image(url="https://cdn.discordapp.com/attachments/1432893983046242346/1495525077691924561/TEPPEN_3ME_081_art.webp")
 
         await ctx.send(embed=embed)
 
     # =========================
-    # INSERIR ITENS
+    # INSERIR (igual antes)
     # =========================
     @commands.command(name="inserir")
     async def inserir(self, ctx):
 
         linhas = ctx.message.content.split("\n")[1:]
 
-        if not linhas:
-            await ctx.send("❌ Insira itens abaixo do comando.")
-            return
-
-        itens_input = []
-
+        itens = []
         for linha in linhas:
-            linha = linha.strip()
-
-            match = re.match(r"(.+?)\s*\((\d+)x\)", linha, re.IGNORECASE)
-
+            match = re.match(r"(.+?)\s*\((\d+)x\)", linha)
             if match:
-                nome = match.group(1).strip()
-                qtd = int(match.group(2))
+                itens += [match.group(1)] * int(match.group(2))
             else:
-                nome = linha
-                qtd = 1
+                itens.append(linha.strip())
 
-            itens_input.extend([nome] * qtd)
-
-        if len(itens_input) < 5:
-            await ctx.send("❌ Mínimo de 5 itens.")
+        if len(itens) < 5:
+            await ctx.send("❌ Mínimo 5 itens.")
             return
 
         dados = await self.carregar_dados()
-
         mapa = {d["nome"].lower(): d for d in dados}
-        nomes_validos = list(mapa.keys())
 
         encontrados = []
-
-        for nome in itens_input:
-            nome_lower = nome.lower().strip()
-
-            if nome_lower in mapa:
-                encontrados.append(mapa[nome_lower])
+        for nome in itens:
+            if nome.lower() in mapa:
+                encontrados.append(mapa[nome.lower()])
             else:
-                sugestao = difflib.get_close_matches(nome_lower, nomes_validos, n=1)
-
-                if sugestao:
-                    await ctx.send(
-                        f"❌ Item não encontrado: **{nome}**\n"
-                        f"👉 Você quis dizer: **{sugestao[0]}**?"
-                    )
-                else:
-                    await ctx.send(f"❌ Item não encontrado: **{nome}**")
-
+                sugestao = difflib.get_close_matches(nome.lower(), mapa.keys(), 1)
+                await ctx.send(f"❌ {nome} não encontrado. Talvez: {sugestao}")
                 return
-
-        resultados = []
 
         grupos = [encontrados[i:i+5] for i in range(0, len(encontrados), 5)]
 
-        for grupo in grupos:
-            if len(grupo) < 5:
-                continue
+        resultados = []
+        for g in grupos:
+            resultados.append(self.processar_grupo(g, dados))
 
-            resultado = self.processar_grupo(grupo, dados)
-            resultados.append(resultado)
+        await ctx.send("\n".join(resultados))
 
-        texto = "**🎰 Resultados do Trader:**\n\n"
-        for i, r in enumerate(resultados, 1):
-            texto += f"Resultado {i}: {r}\n"
+    async def carregar_dados(self):
+        dados = []
+        async with aiohttp.ClientSession() as session:
+            for nome_pack, info in PACKS.items():
+                async with session.get(info["url"]) as resp:
+                    text = await resp.text()
 
-        await ctx.send(texto)
+                for row in csv.DictReader(text.splitlines()):
+                    nome = row.get("Nome", "").strip()
+                    rar = row.get("Rarity", "").strip()
 
-    # =========================
-    # PROCESSAR
-    # =========================
+                    if nome and rar:
+                        dados.append({
+                            "nome": nome,
+                            "raridade": rar,
+                            "tipo": info["tipo"]
+                        })
+        return dados
+
     def processar_grupo(self, grupo, dados):
+        tipo = Counter(d["tipo"] for d in grupo).most_common(1)[0][0]
+        rar = Counter(d["raridade"] for d in grupo).most_common(1)[0][0]
 
-        usados = set(d["nome"].lower() for d in grupo)
-
-        tipo_count = Counter(d["tipo"] for d in grupo)
-
-        if tipo_count["chip"] > tipo_count["program"]:
-            tipo_final = "chip"
-        elif tipo_count["program"] > tipo_count["chip"]:
-            tipo_final = "program"
-        else:
-            tipo_final = random.choice(["chip", "program"])
-
-        rar_count = Counter(d["raridade"] for d in grupo)
-
-        max_qtd = max(rar_count.values())
-        empatados = [r for r, q in rar_count.items() if q == max_qtd]
-
-        rar_final = max(empatados, key=lambda r: RARITY_ORDER.index(r))
+        usados = {d["nome"].lower() for d in grupo}
 
         pool = [
             d["nome"] for d in dados
-            if d["tipo"] == tipo_final
-            and d["raridade"] == rar_final
-            and d["nome"].lower() not in usados
+            if d["tipo"] == tipo and d["raridade"] == rar and d["nome"].lower() not in usados
         ]
 
-        if not pool:
-            return "❌ Sem opções disponíveis."
-
-        return random.choice(pool)
-
+        return random.choice(pool) if pool else "❌ Nada encontrado"
 
 async def setup(bot):
-    await bot.add_cog(Sistema(bot))
+    await bot.add_cog(Sistema(bot)
