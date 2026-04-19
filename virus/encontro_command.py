@@ -150,7 +150,7 @@ class EncontroCommand(commands.Cog):
 
 
 # =============================================================
-# COMANDO !r / !rewards
+# COMANDO !reward (ANTES !r)
 # =============================================================
 class RewardsCommand(commands.Cog):
     def __init__(self, bot):
@@ -181,14 +181,12 @@ class RewardsCommand(commands.Cog):
 
         return None
 
-    # ---------- CORRIGIDO: parse robusto com regex ----------
     def parse_rewards(self, reward_text):
         tabela = []
         partes = reward_text.split(",")
 
         for p in partes:
             p = p.strip()
-            # Regex para capturar R1-2: Recompensa, R6: Recompensa, etc.
             match = re.match(r"R(\d+)(?:-(\d+))?\s*:\s*(.+)", p)
             if match:
                 min_r = int(match.group(1))
@@ -197,7 +195,7 @@ class RewardsCommand(commands.Cog):
                 tabela.append((min_r, max_r, recompensa))
         return tabela
 
-    @commands.command(name="r", aliases=["rewards"])
+    @commands.command(name="reward", aliases=["r", "rewards"])
     async def rewards(self, ctx, filtro: str = None):
         if not ctx.message.reference:
             await ctx.send("❌ Responda a mensagem do **!encontro**.")
@@ -226,7 +224,6 @@ class RewardsCommand(commands.Cog):
 
             tabela = self.parse_rewards(reward_txt)
 
-            # -------- !r zenny → GARANTE ZENNY --------
             if filtro and filtro.lower() == "zenny":
                 for _ in range(qtd):
                     zenny_assigned = False
@@ -245,7 +242,6 @@ class RewardsCommand(commands.Cog):
                                 break
                 continue
 
-            # -------- !r normal --------
             for _ in range(qtd):
                 dado = random.randint(1, 6)
                 recompensa = None
