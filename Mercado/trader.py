@@ -32,31 +32,44 @@ class Trader(commands.Cog):
     async def carregar_dados(self):
         dados = []
 
-        async with aiohttp.ClientSession() as session:
-            for nome_pack, info in PACKS.items():
-                async with session.get(info["url"]) as resp:
-                    if resp.status != 200:
+        try:
+            async with aiohttp.ClientSession() as session:
+                for nome_pack, info in PACKS.items():
+                    try:
+                        async with session.get(info["url"]) as resp:
+                            if resp.status != 200:
+                                print(f"⚠️ Erro ao buscar {nome_pack}: Status {resp.status}")
+                                continue
+
+                            text = await resp.text()
+
+                            reader = csv.DictReader(text.splitlines())
+
+                            for row in reader:
+                                nome = row.get("Nome", "").strip()
+                                raridade = row.get("Rarity", "").strip()
+
+                                if not nome or not raridade:
+                                    continue
+
+                                if nome in BANNED_PARTS.get(nome_pack, set()):
+                                    continue
+
+                                dados.append({
+                                    "nome": nome,
+                                    "raridade": raridade,
+                                    "tipo": info["tipo"]
+                                })
+                    except Exception as e:
+                        print(f"❌ Erro ao processar {nome_pack}: {e}")
                         continue
 
-                    text = await resp.text()
+        except Exception as e:
+            print(f"❌ ERRO CRÍTICO em carregar_dados(): {e}")
+            return []
 
-                    reader = csv.DictReader(text.splitlines())
-
-                    for row in reader:
-                        nome = row.get("Nome", "").strip()
-                        raridade = row.get("Rarity", "").strip()
-
-                        if not nome or not raridade:
-                            continue
-
-                        if nome in BANNED_PARTS.get(nome_pack, set()):
-                            continue
-
-                        dados.append({
-                            "nome": nome,
-                            "raridade": raridade,
-                            "tipo": info["tipo"]
-                        })
+        if not dados:
+            print("⚠️ Nenhum dado foi carregado!")
 
         return dados
 
@@ -112,6 +125,12 @@ class Trader(commands.Cog):
             return
 
         dados = await self.carregar_dados()
+        
+        # ✅ FIX: Check if data was loaded
+        if not dados:
+            await ctx.send("❌ Erro ao carregar dados do servidor.")
+            return
+        
         mapa = {d["nome"].lower(): d for d in dados}
         nomes = list(mapa.keys())
 
@@ -139,14 +158,26 @@ class Trader(commands.Cog):
                 continue
             resultados.append(self.processar(g, dados))
 
+        # ✅ FIX: Check if results exist
+        if not resultados:
+            await ctx.send("❌ Nenhum resultado válido gerado.")
+            return
+
         await ctx.send("**🎰 Resultado do Trader:**\n" + "\n".join(resultados))
 
     def processar(self, grupo, dados):
 
         usados = {d["nome"].lower() for d in grupo}
 
-        tipo = Counter(d["tipo"] for d in grupo).most_common(1)[0][0]
-        rar = Counter(d["raridade"] for d in grupo).most_common(1)[0][0]
+        tipo_counter = Counter(d["tipo"] for d in grupo)
+        rar_counter = Counter(d["raridade"] for d in grupo)
+
+        # ✅ FIX: Safe extraction with error handling
+        if not tipo_counter or not rar_counter:
+            return "❌ Erro ao processar tipos/raridades"
+
+        tipo = tipo_counter.most_common(1)[0][0]
+        rar = rar_counter.most_common(1)[0][0]
 
         pool = [
             d["nome"] for d in dados
@@ -159,4 +190,8 @@ class Trader(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(Trader(bot))
+    try:
+        await bot.add_cog(Trader(bot))
+        print("✅ Trader Cog carregado com sucesso!")
+    except Exception as e:
+        print(f"❌ Erro ao registrar Trader Cog: {e}")
