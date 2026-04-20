@@ -5,11 +5,14 @@ import asyncio
 import traceback
 from manter_vivo import manter_vivo
 
+# Mantém o bot vivo (Replit)
 manter_vivo()
 
+# Permissões
 intents = discord.Intents.default()
 intents.message_content = True
 
+# Bot
 bot = commands.Bot(
     command_prefix="!",
     intents=intents,
@@ -17,9 +20,11 @@ bot = commands.Bot(
     case_insensitive=True
 )
 
+# ──▼ Carregar extensões ───────────────────────────────────────────────
 async def setup_extensoes():
     try:
-        # ───────── VIRUS ────────��
+
+        # ───────── VIRUS ─────────
         if "virus.virus_command" not in bot.extensions:
             await bot.load_extension("virus.virus_command")
 
@@ -63,39 +68,49 @@ async def setup_extensoes():
         if "Mercado.mercado_command" not in bot.extensions:
             await bot.load_extension("Mercado.mercado_command")
 
-        # ───────── 🔄 TRADER ─────────
-        try:
-            await bot.load_extension("Mercado.trader")
-            print("✅ Trader carregado com sucesso!")
-        except Exception as e:
-            print("❌ ERRO AO CARREGAR TRADER:")
-            print(e)
-            traceback.print_exc()
+        # ───────── 🔄 TRADER (COM DEBUG) ─────────
+        if "Mercado.trader" not in bot.extensions:
+            try:
+                await bot.load_extension("Mercado.trader")
+                print("✅ Extensão Mercado.trader carregada com sucesso!")
+            except Exception as e:
+                print("❌ ERRO AO CARREGAR MERCADO.TRADER:")
+                print(f"   Tipo: {type(e).__name__}")
+                print(f"   Mensagem: {e}")
+                traceback.print_exc()
 
-        # ───────── 🔥 TESTE ─────────
-        try:
-            await bot.load_extension("Teste.trader_test")
-            print("✅ Teste.trader_test carregado com sucesso!")
-        except Exception as e:
-            print("❌ ERRO AO CARREGAR TESTE.TRADER_TEST:")
-            print(e)
-            traceback.print_exc()
+        # ───────── 🔥 TESTE (COM DEBUG) ─────────
+        if "Teste.trader_test" not in bot.extensions:
+            try:
+                print("\n🔍 Tentando carregar Teste.trader_test...")
+                await bot.load_extension("Teste.trader_test")
+                print("✅ Extensão Teste.trader_test carregada com sucesso!")
+            except Exception as e:
+                print("❌ ERRO AO CARREGAR TESTE.TRADER_TEST:")
+                print(f"   Tipo: {type(e).__name__}")
+                print(f"   Mensagem: {e}")
+                print("\n📋 Stack trace completo:")
+                traceback.print_exc()
 
-        print("✅ Todas as extensões carregadas!")
+        print("\n✅ Todas as extensões processadas!")
 
     except Exception as e:
-        print(f"❌ Erro ao carregar extensões: {e}")
+        print(f"❌ Erro geral ao carregar extensões: {e}")
         traceback.print_exc()
 
+# ──▼ Bot online ───────────────────────────────────────────────────────
 @bot.event
 async def on_ready():
-    print(f"✅ Bot está online como {bot.user}")
+    print(f"\n✅ Bot está online como {bot.user}")
+    print(f"✅ Extensões carregadas: {len(bot.extensions)}")
 
+# ──▼ Mensagens / menções ──────────────────────────────────────────────
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
 
+    # evita conflito com replies
     if message.reference:
         try:
             msg_ref = await message.channel.fetch_message(message.reference.message_id)
@@ -105,6 +120,7 @@ async def on_message(message):
         except:
             pass
 
+    # menção ao bot
     if bot.user in message.mentions:
         await message.channel.send(
             f"👋 Oi {message.author.mention}! Se precisar de ajuda, use **!sos**."
@@ -112,10 +128,12 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
+# ──▼ comando teste ────────────────────────────────────────────────────
 @bot.command()
 async def oi(ctx):
     await ctx.send(f"Fala {ctx.author.mention}! Eu tô vivo aqui no servidor!")
 
+# ──▼ start ────────────────────────────────────────────────────────────
 async def main():
     async with bot:
         await setup_extensoes()
