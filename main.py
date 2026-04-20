@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import os
 import asyncio
+import traceback
+import sys
 from manter_vivo import manter_vivo
 
 # Mantém o bot vivo (Replit)
@@ -21,6 +23,10 @@ bot = commands.Bot(
 
 # ──▼ Carregar extensões ───────────────────────────────────────────────
 async def setup_extensoes():
+    print("\n" + "="*50)
+    print("🔍 INICIANDO CARREGAMENTO DE EXTENSÕES")
+    print("="*50 + "\n")
+
     try:
 
         # ───────── VIRUS ─────────
@@ -67,18 +73,28 @@ async def setup_extensoes():
         if "Mercado.mercado_command" not in bot.extensions:
             await bot.load_extension("Mercado.mercado_command")
 
-        # ───────── 🔄 TRADER TEST ─────────
+        # ───────── 🔄 TESTE TRADER ─────────
+        print("\n🔍 DEBUG: Tentando carregar Teste.trader_test...")
+        print(f"   Diretório atual: {os.getcwd()}")
+        print(f"   Arquivo existe? {os.path.exists('Teste/trader_test.py')}")
+        print(f"   __init__.py existe? {os.path.exists('Teste/__init__.py')}")
+        
         try:
             await bot.load_extension("Teste.trader_test")
-            print("🔄 Trader TEST carregado com sucesso!")
+            print("✅ Teste.trader_test carregado com sucesso!")
         except Exception as e:
-            print("❌ ERRO AO CARREGAR TRADER TEST:")
-            print(e)
+            print("\n❌ ERRO AO CARREGAR TESTE.TRADER_TEST:")
+            print(f"   Tipo: {type(e).__name__}")
+            print(f"   Mensagem: {e}")
+            print("\n📋 Stack trace completo:")
+            traceback.print_exc()
 
-        print("✅ Todas as extensões carregadas!")
+        print("\n✅ Todas as extensões carregadas!")
+        print("="*50 + "\n")
 
     except Exception as e:
-        print(f"❌ Erro ao carregar extensões: {e}")
+        print(f"\n❌ Erro ao carregar extensões: {e}")
+        traceback.print_exc()
 
 # ──▼ Bot online ───────────────────────────────────────────────────────
 @bot.event
