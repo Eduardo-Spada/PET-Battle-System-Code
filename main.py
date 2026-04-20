@@ -3,17 +3,13 @@ from discord.ext import commands
 import os
 import asyncio
 import traceback
-import sys
 from manter_vivo import manter_vivo
 
-# Mantém o bot vivo (Replit)
 manter_vivo()
 
-# Permissões
 intents = discord.Intents.default()
 intents.message_content = True
 
-# Bot
 bot = commands.Bot(
     command_prefix="!",
     intents=intents,
@@ -21,15 +17,9 @@ bot = commands.Bot(
     case_insensitive=True
 )
 
-# ──▼ Carregar extensões ───────────────────────────────────────────────
 async def setup_extensoes():
-    print("\n" + "="*50)
-    print("🔍 INICIANDO CARREGAMENTO DE EXTENSÕES")
-    print("="*50 + "\n")
-
     try:
-
-        # ───────── VIRUS ─────────
+        # ───────── VIRUS ────────��
         if "virus.virus_command" not in bot.extensions:
             await bot.load_extension("virus.virus_command")
 
@@ -73,35 +63,34 @@ async def setup_extensoes():
         if "Mercado.mercado_command" not in bot.extensions:
             await bot.load_extension("Mercado.mercado_command")
 
-        # ───────── 🔄 TESTE TRADER ─────────
-        print("\n🔍 DEBUG: Tentando carregar Teste.trader_test...")
-        print(f"   Diretório atual: {os.getcwd()}")
-        print(f"   Arquivo existe? {os.path.exists('Teste/trader_test.py')}")
-        print(f"   __init__.py existe? {os.path.exists('Teste/__init__.py')}")
-        
+        # ───────── 🔄 TRADER ─────────
+        try:
+            await bot.load_extension("Mercado.trader")
+            print("✅ Trader carregado com sucesso!")
+        except Exception as e:
+            print("❌ ERRO AO CARREGAR TRADER:")
+            print(e)
+            traceback.print_exc()
+
+        # ───────── 🔥 TESTE ─────────
         try:
             await bot.load_extension("Teste.trader_test")
             print("✅ Teste.trader_test carregado com sucesso!")
         except Exception as e:
-            print("\n❌ ERRO AO CARREGAR TESTE.TRADER_TEST:")
-            print(f"   Tipo: {type(e).__name__}")
-            print(f"   Mensagem: {e}")
-            print("\n📋 Stack trace completo:")
+            print("❌ ERRO AO CARREGAR TESTE.TRADER_TEST:")
+            print(e)
             traceback.print_exc()
 
-        print("\n✅ Todas as extensões carregadas!")
-        print("="*50 + "\n")
+        print("✅ Todas as extensões carregadas!")
 
     except Exception as e:
-        print(f"\n❌ Erro ao carregar extensões: {e}")
+        print(f"❌ Erro ao carregar extensões: {e}")
         traceback.print_exc()
 
-# ──▼ Bot online ───────────────────────────────────────────────────────
 @bot.event
 async def on_ready():
     print(f"✅ Bot está online como {bot.user}")
 
-# ──▼ Mensagens / menções ──────────────────────────────────────────────
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
@@ -123,12 +112,10 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-# ──▼ comando teste ────────────────────────────────────────────────────
 @bot.command()
 async def oi(ctx):
     await ctx.send(f"Fala {ctx.author.mention}! Eu tô vivo aqui no servidor!")
 
-# ──▼ start ────────────────────────────────────────────────────────────
 async def main():
     async with bot:
         await setup_extensoes()
