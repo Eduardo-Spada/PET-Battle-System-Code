@@ -19,7 +19,7 @@ PACKS = {
 }
 
 BANNED_PARTS = {
-    "navicust pack | rare": {"TrueLove"},
+    "navicust pack | rare": {"TrueLove", "SlghBell"},
     "battlechip pack": {"FolderBack"}
 }
 
@@ -43,7 +43,17 @@ class Trader(commands.Cog):
 
                             text = await resp.text()
 
-                            reader = csv.DictReader(text.splitlines())
+                            # 🔥 CORREÇÃO DO CSV (igual ao comando chip)
+                            linhas = text.splitlines()
+
+                            if "Nome" not in linhas[0]:
+                                linhas = linhas[1:]
+
+                            reader = csv.DictReader(linhas)
+                            reader.fieldnames = [
+                                h.strip().replace("\ufeff", "")
+                                for h in reader.fieldnames
+                            ]
 
                             for row in reader:
                                 nome = row.get("Nome", "").strip()
@@ -60,6 +70,7 @@ class Trader(commands.Cog):
                                     "raridade": raridade,
                                     "tipo": info["tipo"]
                                 })
+
                     except Exception as e:
                         print(f"❌ Erro ao processar {nome_pack}: {e}")
                         continue
@@ -68,39 +79,41 @@ class Trader(commands.Cog):
             print(f"❌ ERRO CRÍTICO em carregar_dados(): {e}")
             return []
 
-        if not dados:
-            print("⚠️ Nenhum dado foi carregado!")
+        print(f"📦 Total de itens carregados: {len(dados)}")
 
         return dados
 
+    # =========================
+    # !TRADER
+    # =========================
     @commands.command(name="trader")
     async def trader(self, ctx):
 
-        embed = discord.Embed(
-            title="🔄 Battler Trader",
-            description=(
-                "Bem-vindo ao **Battler Trader**!\n\n"
-                "Você sacrifica itens e recebe um novo aleatório.\n\n"
-                "**📜 Regras:**\n"
-                "• 5 itens → 1 resultado\n"
-                "• Tipo depende da maioria\n"
-                "• Raridade depende da maioria\n"
-                "• Empate → raridade mais alta\n"
-                "• Itens NÃO voltam\n\n"
-                "**⚙️ Uso:**\n"
-                "`!inserir`\n"
-                "Cannon (2x)\n"
-                "Sword"
-            ),
-            color=discord.Color.blue()
+        texto = (
+            "🔄 **Battler Trader**\n\n"
+            "Bem-vindo ao Battler Trader!\n\n"
+            "Você sacrifica itens e recebe um novo aleatório.\n\n"
+            "**📜 Regras:**\n"
+            "• 5 itens → 1 resultado\n"
+            "• Tipo depende da maioria\n"
+            "• Raridade depende da maioria\n"
+            "• Empate → raridade mais alta\n"
+            "• Itens NÃO voltam\n\n"
+            "**⚙️ Uso:**\n"
+            "`!inserir`\n"
+            "Cannon (2x)\n"
+            "Sword"
         )
 
-        embed.set_image(
-            url="https://cdn.discordapp.com/attachments/1432893983046242346/1495525077691924561/TEPPEN_3ME_081_art.webp"
+        await ctx.send(texto)
+
+        await ctx.send(
+            "https://cdn.discordapp.com/attachments/1432893983046242346/1495525077691924561/TEPPEN_3ME_081_art.webp"
         )
 
-        await ctx.send(embed=embed)
-
+    # =========================
+    # !INSERIR
+    # =========================
     @commands.command(name="inserir")
     async def inserir(self, ctx):
 
@@ -125,12 +138,11 @@ class Trader(commands.Cog):
             return
 
         dados = await self.carregar_dados()
-        
-        # ✅ FIX: Check if data was loaded
+
         if not dados:
             await ctx.send("❌ Erro ao carregar dados do servidor.")
             return
-        
+
         mapa = {d["nome"].lower(): d for d in dados}
         nomes = list(mapa.keys())
 
@@ -158,7 +170,6 @@ class Trader(commands.Cog):
                 continue
             resultados.append(self.processar(g, dados))
 
-        # ✅ FIX: Check if results exist
         if not resultados:
             await ctx.send("❌ Nenhum resultado válido gerado.")
             return
@@ -172,7 +183,6 @@ class Trader(commands.Cog):
         tipo_counter = Counter(d["tipo"] for d in grupo)
         rar_counter = Counter(d["raridade"] for d in grupo)
 
-        # ✅ FIX: Safe extraction with error handling
         if not tipo_counter or not rar_counter:
             return "❌ Erro ao processar tipos/raridades"
 
