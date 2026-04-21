@@ -3,18 +3,20 @@ from discord.ext import commands
 import os
 import asyncio
 import traceback
-import sys
 from manter_vivo import manter_vivo
 
 print("\n" + "="*70)
 print("🚀 BOT INICIANDO...")
 print("="*70)
 
+# Mantém o bot vivo (Replit)
 manter_vivo()
 
+# Permissões
 intents = discord.Intents.default()
 intents.message_content = True
 
+# Bot
 bot = commands.Bot(
     command_prefix="!",
     intents=intents,
@@ -22,12 +24,13 @@ bot = commands.Bot(
     case_insensitive=True
 )
 
+# ──▼ Carregar extensões ───────────────────────────────────────────────
 async def setup_extensoes():
     print("\n" + "="*70)
     print("📦 CARREGANDO EXTENSÕES...")
     print("="*70 + "\n")
     
-    extensoes_base = [
+    extensoes = [
         "virus.virus_command",
         "virus.viruslist",
         "virus.local_command",
@@ -40,79 +43,40 @@ async def setup_extensoes():
         "Ajuda.sos_command",
         "virus.encontro_command",
         "Mercado.mercado_command",
+        "Mercado.trader",  # 🔥 Trader oficial
     ]
     
-    # Carregar extensões base
-    for extensao in extensoes_base:
+    for extensao in extensoes:
         if extensao not in bot.extensions:
             try:
+                print(f"⏳ Carregando {extensao}...")
                 await bot.load_extension(extensao)
-            except Exception as e:
-                print(f"❌ Erro ao carregar {extensao}: {e}")
+                print(f"✅ {extensao} carregado com sucesso!")
+            except commands.ExtensionNotFound as e:
+                print(f"❌ NÃO ENCONTRADA: {extensao}")
                 traceback.print_exc()
-    
-    # MERCADO.TRADER
-    print("\n" + "-"*70)
-    print("🔄 Tentando carregar: Mercado.trader")
-    print("-"*70)
-    
-    if "Mercado.trader" not in bot.extensions:
-        try:
-            print("   ⏳ Carregando Mercado.trader...")
-            await bot.load_extension("Mercado.trader")
-            print("   ✅ Mercado.trader carregado com sucesso!")
-        except commands.ExtensionNotFound as e:
-            print(f"   ❌ EXTENSÃO NÃO ENCONTRADA: {e}")
-            traceback.print_exc()
-        except commands.ExtensionAlreadyLoaded as e:
-            print(f"   ⚠️ JÁ ESTAVA CARREGADA: {e}")
-        except commands.NoEntryPointError as e:
-            print(f"   ❌ SEM FUNÇÃO setup(): {e}")
-            traceback.print_exc()
-        except commands.ExtensionFailed as e:
-            print(f"   ❌ FALHA NA EXECUÇÃO: {e}")
-            traceback.print_exc()
-        except Exception as e:
-            print(f"   ❌ ERRO INESPERADO: {type(e).__name__}: {e}")
-            traceback.print_exc()
-    else:
-        print("   ⚠️ Já estava carregada")
-    
-    # TESTE.TRADER_TEST
-    print("\n" + "-"*70)
-    print("🔥 Tentando carregar: Teste.trader_test")
-    print("-"*70)
-    
-    if "Teste.trader_test" not in bot.extensions:
-        try:
-            print("   ⏳ Carregando Teste.trader_test...")
-            await bot.load_extension("Teste.trader_test")
-            print("   ✅ Teste.trader_test carregado com sucesso!")
-        except commands.ExtensionNotFound as e:
-            print(f"   ❌ EXTENSÃO NÃO ENCONTRADA: {e}")
-            traceback.print_exc()
-        except commands.ExtensionAlreadyLoaded as e:
-            print(f"   ⚠️ JÁ ESTAVA CARREGADA: {e}")
-        except commands.NoEntryPointError as e:
-            print(f"   ❌ SEM FUNÇÃO setup(): {e}")
-            traceback.print_exc()
-        except commands.ExtensionFailed as e:
-            print(f"   ❌ FALHA NA EXECUÇÃO: {e}")
-            traceback.print_exc()
-        except Exception as e:
-            print(f"   ❌ ERRO INESPERADO: {type(e).__name__}: {e}")
-            traceback.print_exc()
-    else:
-        print("   ⚠️ Já estava carregada")
+            except commands.NoEntryPointError:
+                print(f"❌ {extensao} não tem função setup()")
+                traceback.print_exc()
+            except commands.ExtensionFailed as e:
+                print(f"❌ ERRO dentro da extensão {extensao}:")
+                traceback.print_exc()
+            except Exception as e:
+                print(f"❌ ERRO inesperado em {extensao}: {e}")
+                traceback.print_exc()
+        else:
+            print(f"⚠️ {extensao} já estava carregada")
     
     print("\n" + "="*70)
     print(f"✅ Total de extensões carregadas: {len(bot.extensions)}")
     print("="*70 + "\n")
 
+# ──▼ Bot online ───────────────────────────────────────────────────────
 @bot.event
 async def on_ready():
     print(f"\n✅ Bot está online como {bot.user}")
 
+# ──▼ Mensagens / menções ──────────────────────────────────────────────
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
@@ -134,10 +98,12 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
+# ──▼ comando teste ────────────────────────────────────────────────────
 @bot.command()
 async def oi(ctx):
     await ctx.send(f"Fala {ctx.author.mention}! Eu tô vivo aqui no servidor!")
 
+# ──▼ start ────────────────────────────────────────────────────────────
 async def main():
     async with bot:
         await setup_extensoes()
