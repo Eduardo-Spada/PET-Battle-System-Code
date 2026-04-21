@@ -23,9 +23,14 @@ COMANDOS = [
     "🎲 !encontro Área virus:X – Sorteia quantidade definida de vírus.",
     "🎁 !r - marque a mensagem do !encontro, e então utilize esse comando! você obterá as Recompensas de todos os vírus!",
     "💰 !r zenny - A mesma coisa que !r, muda que aqui tu só ganha os zennys! utilize somente caso você possua o programa millionaire, viu?",
+    
+    # 🔄 TRADER
+    "🔄 !trader – Mostra como funciona o sistema de troca.",
+    "🔄 !inserir – Insere itens para realizar a troca no trader.",
+    
+    # 🛒 MERCADO
     "🛒 !mercado – Mostra os itens disponíveis no mercado.",
     "🛒 !mercado [item] (quantia) – Compra um item do mercado. Ex: `!mercado NaviCust Pack | Rare 10`",
-
 ]
 
 # Quantos itens por página
@@ -33,7 +38,7 @@ ITENS_POR_PAGINA = 6
 
 
 # =====================================================================
-# VIEW DO PAGINADOR  — igual ao chipslist, mas adaptada
+# VIEW DO PAGINADOR
 # =====================================================================
 class PaginadorSOS(discord.ui.View):
     def __init__(self, paginas, total):
@@ -74,7 +79,7 @@ class PaginadorSOS(discord.ui.View):
 
 
 # =====================================================================
-# COG DO SOS — igual ao chipslist
+# COG DO SOS
 # =====================================================================
 class SOS(commands.Cog):
     def __init__(self, bot):
@@ -84,7 +89,6 @@ class SOS(commands.Cog):
     async def sos(self, ctx):
         total = len(COMANDOS)
 
-        # divide em páginas
         paginas = [
             COMANDOS[i:i + ITENS_POR_PAGINA]
             for i in range(0, total, ITENS_POR_PAGINA)
