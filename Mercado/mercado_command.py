@@ -25,7 +25,7 @@ PACKS = {
 
 BANNED_PARTS = {
     "navicust pack | rare": {"TrueLove", "SlghBell"},
-    "battlechip pack": {"FolderBack"}
+    "battlechip pack": {"FolderBack", "TrickRTret"}
 }
 
 class Mercado(commands.Cog):
